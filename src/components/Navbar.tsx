@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSession, signOut } from 'next-auth/react';
 import { getDesignation } from '@/lib/designations';
 
@@ -19,9 +20,16 @@ export default function Navbar() {
           
           {/* Brand Logo & Portal Title */}
           <div className="flex items-center space-x-3">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-amber-500 flex items-center justify-center font-black text-white text-base shadow-sm">
-                HT
+            <Link href="/" className="flex items-center gap-3">
+              <div className="relative h-10 w-10 flex items-center justify-center overflow-hidden rounded-xl bg-white">
+                <Image
+                  src="/logo.png"
+                  alt="Humane Touch Logo"
+                  width={40}
+                  height={40}
+                  className="h-full w-full object-contain"
+                  priority
+                />
               </div>
               <div>
                 <span className="text-base font-black tracking-tight text-slate-900 block leading-tight">
@@ -39,7 +47,7 @@ export default function Navbar() {
             {session?.user ? (
               <div className="flex items-center space-x-3">
                 
-                {/* Updated Pill Badge: [Name] • [Designation] */}
+                {/* User Pill Badge: [Name] • [Designation] */}
                 <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100/90 border border-slate-200 text-xs font-bold text-slate-800 shadow-sm">
                   <span>🎴</span>
                   <span className="font-extrabold text-slate-900">{fullName}</span>
