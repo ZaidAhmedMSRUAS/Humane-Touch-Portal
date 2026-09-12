@@ -38,10 +38,16 @@ export default function SanctionLetterPDF({ application, onClose }: LetterProps)
       }
 
       const element = document.getElementById('printable-sanction-letter');
+      if (!element) {
+        throw new Error('Printable sanction letter element was not found');
+      }
+
+      const safeStudentName = studentName.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '');
+      const safeRefNumber = refNumber.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '');
       
       const opt = {
         margin: 0, // Zero margin to prevent top white space offset
-        filename: `HumaneTouch_Award_Letter_${studentName.replace(/\s+/g, '_')}_${refNumber.replace(/\//g, '_')}.pdf`,
+        filename: `HumaneTouch_Award_Letter_${safeStudentName || 'Scholarship_Recipient'}_${safeRefNumber || 'Reference'}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { 
           scale: 2.5, 
@@ -67,7 +73,7 @@ export default function SanctionLetterPDF({ application, onClose }: LetterProps)
     <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6">
       
       {/* 1-Page A4 Portrait Print Styles */}
-      <style jsx global>{`
+      <style>{`
         @media print {
           @page {
             size: A4 portrait;
