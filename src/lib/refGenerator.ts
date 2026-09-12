@@ -12,7 +12,6 @@ export async function generateApplicationRefNumber(
 ): Promise<string> {
   const courseCode = getCourseCode(courseName);
 
-  // Extract 2-digit year format (e.g., '2026-2027' -> '26-27')
   const yearParts = academicYear.split('-');
   const yearSlug =
     yearParts.length === 2
@@ -21,8 +20,7 @@ export async function generateApplicationRefNumber(
 
   const prefix = `HT/${yearSlug}/${courseCode}/`;
 
-  // Count how many applications already exist for this specific course in this academic year
-  const count = await prisma.scholarshipApplication.count({
+  const count = await prisma.application.count({
     where: {
       referenceNumber: {
         startsWith: prefix,

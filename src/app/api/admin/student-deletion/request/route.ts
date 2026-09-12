@@ -15,7 +15,6 @@ export async function POST(req: Request) {
     const requesterPhone = (session.user as any).phone || session.user.email;
     const requesterName = session.user.name || 'Head Volunteer Nimra M';
 
-    // Allow Volunteers and Admins to initiate
     if (requesterRole !== UserRole.VOLUNTEER && requesterRole !== UserRole.ADMIN) {
       return NextResponse.json({ error: 'Only authorized volunteers can initiate deletion requests.' }, { status: 403 });
     }
@@ -28,14 +27,12 @@ export async function POST(req: Request) {
 
     const student = await prisma.user.findUnique({
       where: { id: studentId },
-      include: { applications: true },
     });
 
     if (!student) {
       return NextResponse.json({ error: 'Student record not found.' }, { status: 404 });
     }
 
-    // Check if an existing pending request already exists
     const existing = await prisma.studentDeletionRequest.findFirst({
       where: {
         studentId: student.id,

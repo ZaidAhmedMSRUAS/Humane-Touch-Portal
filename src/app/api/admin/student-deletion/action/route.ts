@@ -4,7 +4,6 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { UserRole } from '@prisma/client';
 
-// 1. GET ALL PENDING REQUESTS (For Admin Review)
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -22,7 +21,6 @@ export async function GET() {
   }
 }
 
-// 2. APPROVE OR REJECT DELETION (Admin Action)
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -30,7 +28,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Admin approval required.' }, { status: 403 });
     }
 
-    const { requestId, action, adminRemarks } = await req.json(); // action: 'APPROVE' | 'REJECT'
+    const { requestId, action, adminRemarks } = await req.json();
 
     const requestRecord = await prisma.studentDeletionRequest.findUnique({
       where: { id: requestId },
@@ -43,17 +41,33 @@ export async function POST(req: Request) {
     const adminName = session.user?.name || 'Zaid Ahmed (Admin)';
 
     if (action === 'APPROVE') {
-      // 1. Delete all applications related to this student
-      await prisma.scholarshipApplication.deleteMany({
-        where: { studentId: requestRecord.studentId },
+      // 1. Find all application IDs belonging to the student
+      const studentApps = await prisma.application.findMany({
+        where: {
+          student: { id: requestRecord.studentId },
+        },
+        select: { id: true },
       });
+      const appIds = studentApps.map((a) => a.id);
 
-      // 2. Delete student account from Users
+      // 2. Cascade delete dependent verification reports
+      if (appIds.length > 0) {
+        await prisma.verificationReport.deleteMany({
+          where: { applicationId: { in: appIds } },
+        });
+
+        // 3. Delete the applications
+        await prisma.application.deleteMany({
+          where: { id: { in: appIds } },
+        });
+      }
+
+      // 4. Delete the student User record
       await prisma.user.deleteMany({
         where: { id: requestRecord.studentId },
       });
 
-      // 3. Mark request as APPROVED
+      // 5. Update request status to APPROVED
       await prisma.studentDeletionRequest.update({
         where: { id: requestId },
         data: {
