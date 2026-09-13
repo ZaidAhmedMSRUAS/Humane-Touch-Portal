@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import PendingDeletionsAdminPanel from '@/components/admin/PendingDeletionsAdminPanel';
+import CertificateModal from '@/components/documents/CertificateModal';
+import AwardLetterModal from '@/components/documents/AwardLetterModal';
 import { getDesignation } from '@/lib/designations';
 
 export default function AdminDashboardPage() {
@@ -11,8 +13,12 @@ export default function AdminDashboardPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Modals state
+  // In-Page Modals State
   const [infoModalApp, setInfoModalApp] = useState<any | null>(null);
+  const [certificateModalApp, setCertificateModalApp] = useState<any | null>(null);
+  const [awardLetterModalApp, setAwardLetterModalApp] = useState<any | null>(null);
+
+  // Cheque & Password Reset Modals
   const [chequeModalApp, setChequeModalApp] = useState<any | null>(null);
   const [chequeNumberInput, setChequeNumberInput] = useState('');
   const [chequePayeeInput, setChequePayeeInput] = useState('');
@@ -82,7 +88,7 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        alert('Cheque & Disbursal details saved!');
+        alert('Cheque details saved successfully!');
         setChequeModalApp(null);
         fetchAdminData();
       } else {
@@ -128,7 +134,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
-      {/* Header Banner */}
+      {/* Top Header */}
       <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-6 rounded-3xl shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 bg-amber-400/10 px-2.5 py-1 rounded-md">
@@ -136,7 +142,7 @@ export default function AdminDashboardPage() {
           </span>
           <h1 className="text-2xl font-black mt-2">Admin Management Dashboard</h1>
           <p className="text-xs text-slate-300 mt-1">
-            Access student dossiers, generate Certificates and Award Letters, and manage disbursements
+            Access student dossiers, view Certificates and Award Letters in-portal, and manage grants
           </p>
         </div>
         <div className="flex gap-2">
@@ -148,7 +154,7 @@ export default function AdminDashboardPage() {
           </Link>
           <button
             onClick={fetchAdminData}
-            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs rounded-xl transition"
+            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs rounded-xl transition cursor-pointer"
           >
             🔄 Refresh
           </button>
@@ -159,7 +165,7 @@ export default function AdminDashboardPage() {
       <div className="flex gap-2 border-b border-slate-200 pb-3">
         <button
           onClick={() => setActiveTab('applications')}
-          className={`px-4 py-2 rounded-xl text-xs font-black transition ${
+          className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer ${
             activeTab === 'applications' ? 'bg-amber-500 text-slate-950 shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
           }`}
         >
@@ -167,7 +173,7 @@ export default function AdminDashboardPage() {
         </button>
         <button
           onClick={() => setActiveTab('users')}
-          className={`px-4 py-2 rounded-xl text-xs font-black transition ${
+          className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer ${
             activeTab === 'users' ? 'bg-amber-500 text-slate-950 shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
           }`}
         >
@@ -175,7 +181,7 @@ export default function AdminDashboardPage() {
         </button>
         <button
           onClick={() => setActiveTab('deletions')}
-          className={`px-4 py-2 rounded-xl text-xs font-black transition ${
+          className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer ${
             activeTab === 'deletions' ? 'bg-amber-500 text-slate-950 shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
           }`}
         >
@@ -183,10 +189,10 @@ export default function AdminDashboardPage() {
         </button>
       </div>
 
-      {/* Applications & Documents List */}
+      {/* Applications Table */}
       {activeTab === 'applications' && (
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
-          <h3 className="text-base font-black text-slate-900 mb-4">Scholarship Applications, Certificates & Award Letters</h3>
+          <h3 className="text-base font-black text-slate-900 mb-4">Scholarship Applications, In-Portal Certificates & Award Letters</h3>
           {loading ? (
             <p className="text-xs text-slate-400 py-8 text-center">Loading applications...</p>
           ) : applications.length === 0 ? (
@@ -199,9 +205,9 @@ export default function AdminDashboardPage() {
                     <th className="py-3 px-3">Ref ID</th>
                     <th className="py-3 px-3">Student</th>
                     <th className="py-3 px-3">Course & College</th>
-                    <th className="py-3 px-3">Assigned Volunteer</th>
+                    <th className="py-3 px-3">Volunteer</th>
                     <th className="py-3 px-3">Cheque Details</th>
-                    <th className="py-3 px-3 text-right">Official Actions & Documents</th>
+                    <th className="py-3 px-3 text-right">In-Portal Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -242,33 +248,31 @@ export default function AdminDashboardPage() {
                       </td>
                       <td className="py-3 px-3 text-right">
                         <div className="flex justify-end items-center gap-1.5 flex-wrap">
-                          {/* 1. View Full Info Modal */}
+                          {/* Info Button */}
                           <button
                             onClick={() => setInfoModalApp(app)}
-                            className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg text-[11px] shadow-sm transition"
+                            className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg text-[11px] shadow-sm transition cursor-pointer"
                           >
                             ℹ️ Info
                           </button>
 
-                          {/* 2. Certificate Download */}
-                          <Link
-                            href={`/documents/certificate/${app.id}`}
-                            target="_blank"
-                            className="px-2.5 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold rounded-lg text-[11px] transition"
+                          {/* In-Portal Certificate Button */}
+                          <button
+                            onClick={() => setCertificateModalApp(app)}
+                            className="px-2.5 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold rounded-lg text-[11px] transition cursor-pointer"
                           >
                             🎓 Certificate
-                          </Link>
+                          </button>
 
-                          {/* 3. Award Letter Download */}
-                          <Link
-                            href={`/documents/award-letter/${app.id}`}
-                            target="_blank"
-                            className="px-2.5 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold rounded-lg text-[11px] transition"
+                          {/* In-Portal Award Letter Button */}
+                          <button
+                            onClick={() => setAwardLetterModalApp(app)}
+                            className="px-2.5 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold rounded-lg text-[11px] transition cursor-pointer"
                           >
                             📜 Award Letter
-                          </Link>
+                          </button>
 
-                          {/* 4. Cheque Entry Modal */}
+                          {/* Cheque Disbursal Button */}
                           <button
                             onClick={() => {
                               setChequeModalApp(app);
@@ -276,7 +280,7 @@ export default function AdminDashboardPage() {
                               setChequePayeeInput(app.chequeInFavourOf || app.collegeName || '');
                               setSanctionedAmountInput(String(app.sanctionedAmount || app.annualTuitionFee || ''));
                             }}
-                            className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-lg text-[11px] border border-slate-300 transition"
+                            className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-lg text-[11px] border border-slate-300 transition cursor-pointer"
                           >
                             💳 Cheque
                           </button>
@@ -291,10 +295,10 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Users & Password Reset */}
+      {/* Users Directory */}
       {activeTab === 'users' && (
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
-          <h3 className="text-base font-black text-slate-900 mb-4">All Registered Accounts</h3>
+          <h3 className="text-base font-black text-slate-900 mb-4">All Registered Staff & Student Accounts</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold">
@@ -321,7 +325,7 @@ export default function AdminDashboardPage() {
                           setPasswordResetUser(u);
                           setNewPasswordInput('');
                         }}
-                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl text-[11px] border border-slate-300 transition"
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl text-[11px] border border-slate-300 transition cursor-pointer"
                       >
                         🔑 Reset Password
                       </button>
@@ -334,19 +338,19 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Deletions Approval */}
+      {/* Pending Deletions */}
       {activeTab === 'deletions' && <PendingDeletionsAdminPanel />}
 
-      {/* 1. STUDENT FULL DOSSIER INFO MODAL */}
+      {/* 1. STUDENT DOSSIER MODAL */}
       {infoModalApp && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 my-8">
             <div className="flex justify-between items-center pb-2 border-b border-slate-100">
               <div>
-                <h3 className="text-base font-black text-slate-900">{infoModalApp.student?.fullName} - Application Dossier</h3>
+                <h3 className="text-base font-black text-slate-900">{infoModalApp.student?.fullName} - Dossier</h3>
                 <p className="text-xs font-mono font-bold text-amber-700">{infoModalApp.referenceNumber}</p>
               </div>
-              <button onClick={() => setInfoModalApp(null)} className="w-8 h-8 rounded-full bg-slate-100 font-bold">✕</button>
+              <button onClick={() => setInfoModalApp(null)} className="w-8 h-8 rounded-full bg-slate-100 font-bold cursor-pointer">✕</button>
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-xs">
@@ -354,7 +358,7 @@ export default function AdminDashboardPage() {
               <div className="bg-slate-50 p-3 rounded-xl"><strong>Course:</strong> {infoModalApp.courseName}</div>
               <div className="bg-slate-50 p-3 rounded-xl"><strong>College:</strong> {infoModalApp.collegeName}</div>
               <div className="bg-slate-50 p-3 rounded-xl"><strong>Year:</strong> {infoModalApp.currentYearOfStudy}</div>
-              <div className="bg-slate-50 p-3 rounded-xl"><strong>Previous Score:</strong> {infoModalApp.previousScoreMarks}%</div>
+              <div className="bg-slate-50 p-3 rounded-xl"><strong>Score:</strong> {infoModalApp.previousScoreMarks}%</div>
               <div className="bg-slate-50 p-3 rounded-xl"><strong>Annual Income:</strong> ₹{infoModalApp.familyAnnualIncome?.toLocaleString('en-IN')}</div>
               <div className="bg-slate-50 p-3 rounded-xl"><strong>Tuition Fee:</strong> ₹{infoModalApp.annualTuitionFee?.toLocaleString('en-IN')}</div>
               <div className="bg-slate-50 p-3 rounded-xl"><strong>Category:</strong> {infoModalApp.householdCategory}</div>
@@ -373,23 +377,27 @@ export default function AdminDashboardPage() {
             )}
 
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-              <Link
-                href={`/documents/certificate/${infoModalApp.id}`}
-                target="_blank"
-                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs"
+              <button
+                onClick={() => {
+                  setCertificateModalApp(infoModalApp);
+                  setInfoModalApp(null);
+                }}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs cursor-pointer"
               >
                 🎓 View Certificate
-              </Link>
-              <Link
-                href={`/documents/award-letter/${infoModalApp.id}`}
-                target="_blank"
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs"
+              </button>
+              <button
+                onClick={() => {
+                  setAwardLetterModalApp(infoModalApp);
+                  setInfoModalApp(null);
+                }}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs cursor-pointer"
               >
                 📜 View Award Letter
-              </Link>
+              </button>
               <button
                 onClick={() => setInfoModalApp(null)}
-                className="px-4 py-2 bg-slate-100 font-bold rounded-xl text-slate-700 text-xs"
+                className="px-4 py-2 bg-slate-100 font-bold rounded-xl text-slate-700 text-xs cursor-pointer"
               >
                 Close
               </button>
@@ -398,13 +406,29 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* 2. CHEQUE MODAL */}
+      {/* 2. IN-PORTAL CERTIFICATE MODAL */}
+      {certificateModalApp && (
+        <CertificateModal
+          app={certificateModalApp}
+          onClose={() => setCertificateModalApp(null)}
+        />
+      )}
+
+      {/* 3. IN-PORTAL AWARD LETTER MODAL */}
+      {awardLetterModalApp && (
+        <AwardLetterModal
+          app={awardLetterModalApp}
+          onClose={() => setAwardLetterModalApp(null)}
+        />
+      )}
+
+      {/* 4. CHEQUE DISBURSAL MODAL */}
       {chequeModalApp && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <div className="flex justify-between items-center pb-2 border-b border-slate-100">
               <h3 className="text-base font-black text-slate-900">Record Cheque & Sanction</h3>
-              <button onClick={() => setChequeModalApp(null)} className="w-8 h-8 rounded-full bg-slate-100 font-bold">✕</button>
+              <button onClick={() => setChequeModalApp(null)} className="w-8 h-8 rounded-full bg-slate-100 font-bold cursor-pointer">✕</button>
             </div>
             <form onSubmit={handleSaveCheque} className="space-y-3 text-xs">
               <div className="p-2.5 bg-slate-50 rounded-xl font-semibold text-slate-800">
@@ -447,14 +471,14 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setChequeModalApp(null)}
-                  className="px-4 py-2 bg-slate-100 font-bold rounded-xl text-slate-700"
+                  className="px-4 py-2 bg-slate-100 font-bold rounded-xl text-slate-700 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl shadow transition"
+                  className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl shadow transition cursor-pointer"
                 >
                   {actionLoading ? 'Saving...' : 'Save & Disburse'}
                 </button>
@@ -464,13 +488,13 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* 3. PASSWORD RESET MODAL */}
+      {/* 5. PASSWORD RESET MODAL */}
       {passwordResetUser && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <div className="flex justify-between items-center pb-2 border-b border-slate-100">
               <h3 className="text-base font-black text-slate-900">Admin Password Override</h3>
-              <button onClick={() => setPasswordResetUser(null)} className="w-8 h-8 rounded-full bg-slate-100 font-bold">✕</button>
+              <button onClick={() => setPasswordResetUser(null)} className="w-8 h-8 rounded-full bg-slate-100 font-bold cursor-pointer">✕</button>
             </div>
             <form onSubmit={handleResetPassword} className="space-y-3 text-xs">
               <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900">
@@ -491,14 +515,14 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setPasswordResetUser(null)}
-                  className="px-4 py-2 bg-slate-100 font-bold rounded-xl text-slate-700"
+                  className="px-4 py-2 bg-slate-100 font-bold rounded-xl text-slate-700 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow transition"
+                  className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow transition cursor-pointer"
                 >
                   {actionLoading ? 'Updating...' : 'Set Password'}
                 </button>
