@@ -45,7 +45,6 @@ export default function AwardLetterModal({ app, onClose }: Props) {
 
   const downloadFilename = `HumaneTouch_Award_Letter_${studentName.replace(/[^a-zA-Z0-9]/g, '_')}_${refNumber.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
 
-  // Download PDF Handler
   const handleDownloadPDF = async () => {
     if (!letterRef.current) return;
     setDownloading(true);
@@ -55,9 +54,9 @@ export default function AwardLetterModal({ app, onClose }: Props) {
       const opt = {
         margin: 8,
         filename: downloadFilename,
-        image: { type: 'jpeg', quality: 0.98 },
+        image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
       };
 
       await html2pdf().set(opt).from(letterRef.current).save();
@@ -73,7 +72,7 @@ export default function AwardLetterModal({ app, onClose }: Props) {
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto print:p-0 print:bg-white print:static">
       <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl space-y-4 my-6 print:my-0 print:p-0 print:shadow-none print:max-w-none">
         
-        {/* Top Actions Bar (Hidden on Print) */}
+        {/* Top Actions Bar */}
         <div className="flex justify-between items-center pb-2 border-b border-slate-100 print:hidden">
           <div className="flex items-center gap-2">
             <span className="text-xs font-black uppercase tracking-wider text-slate-800">
@@ -107,7 +106,7 @@ export default function AwardLetterModal({ app, onClose }: Props) {
           </div>
         </div>
 
-        {/* Printable & Downloadable Letter Content */}
+        {/* Letter Container */}
         <div
           ref={letterRef}
           className="w-full bg-white border border-slate-300 p-8 sm:p-12 shadow-sm print:shadow-none print:border-none text-slate-900 font-sans text-xs sm:text-[13px] leading-relaxed"
@@ -148,7 +147,6 @@ export default function AwardLetterModal({ app, onClose }: Props) {
             SUBJECT: GRANT SANCTION & DIRECT CHEQUE DISBURSAL FOR UDAAN SCHOLARSHIP
           </div>
 
-          {/* Salutation & Opening */}
           <p className="mb-3 font-semibold text-slate-900">Dear Sir/Madam,</p>
           <p className="mb-4 text-justify">
             We have the pleasure to inform you that Humane Touch Trust has approved a higher education scholarship grant under the <strong>Udaan Scholarship Program</strong> for the following candidate:
