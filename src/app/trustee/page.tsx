@@ -98,7 +98,7 @@ export default function TrusteeDashboardPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {applications.map((app) => {
-                  const latestReport = app.verificationReports?.[0];
+                  const report = app.verificationReport || app.verificationReports?.[0];
                   return (
                     <tr key={app.id} className="hover:bg-slate-50/60 transition">
                       <td className="py-3.5 px-3 font-mono font-bold text-amber-800">
@@ -117,14 +117,14 @@ export default function TrusteeDashboardPage() {
                         <div className="text-[11px] text-slate-500">Income: ₹{app.familyAnnualIncome?.toLocaleString('en-IN')}</div>
                       </td>
                       <td className="py-3.5 px-3">
-                        {latestReport ? (
+                        {report ? (
                           <div>
                             <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 font-bold rounded text-[10px] border border-emerald-200">
                               ✓ Verified
                             </span>
-                            {latestReport.remarks && (
-                              <p className="text-[10px] text-slate-500 truncate max-w-[140px] mt-0.5" title={latestReport.remarks}>
-                                {latestReport.remarks}
+                            {report.remarks && (
+                              <p className="text-[10px] text-slate-500 truncate max-w-[140px] mt-0.5" title={report.remarks}>
+                                {report.remarks}
                               </p>
                             )}
                           </div>
@@ -148,7 +148,6 @@ export default function TrusteeDashboardPage() {
                       </td>
                       <td className="py-3.5 px-3 text-right">
                         <div className="flex justify-end gap-1.5 flex-wrap">
-                          {/* Info Modal Button */}
                           <button
                             onClick={() => setInfoModalApp(app)}
                             className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg text-[11px] transition cursor-pointer"
@@ -156,7 +155,6 @@ export default function TrusteeDashboardPage() {
                             ℹ️ Info
                           </button>
 
-                          {/* Certificate Button */}
                           <button
                             onClick={() => setCertificateModalApp(app)}
                             className="px-2.5 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold rounded-lg text-[11px] transition cursor-pointer"
@@ -164,7 +162,6 @@ export default function TrusteeDashboardPage() {
                             🎓 Certificate
                           </button>
 
-                          {/* Award Letter Button */}
                           <button
                             onClick={() => setAwardLetterModalApp(app)}
                             className="px-2.5 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold rounded-lg text-[11px] transition cursor-pointer"
@@ -217,10 +214,12 @@ export default function TrusteeDashboardPage() {
               </div>
             )}
 
-            {infoModalApp.verificationReports?.[0] && (
+            {(infoModalApp.verificationReport || infoModalApp.verificationReports?.[0]) && (
               <div className="text-xs bg-emerald-50 border border-emerald-200 p-3 rounded-xl space-y-1">
                 <p className="font-bold text-emerald-900">Volunteer Verification & Interview Assessment:</p>
-                <p className="text-emerald-800">{infoModalApp.verificationReports[0].remarks}</p>
+                <p className="text-emerald-800">
+                  {(infoModalApp.verificationReport || infoModalApp.verificationReports?.[0]).remarks}
+                </p>
               </div>
             )}
 

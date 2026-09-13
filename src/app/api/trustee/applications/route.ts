@@ -32,10 +32,7 @@ export async function GET() {
             phone: true,
           },
         },
-        verificationReports: {
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-        },
+        verificationReport: true,
       },
       orderBy: { createdAt: 'desc' },
     });
