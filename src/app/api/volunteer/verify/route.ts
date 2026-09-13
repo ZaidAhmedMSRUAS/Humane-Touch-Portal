@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     }
 
     const volunteerId = (session.user as any).id;
-    const { applicationId, chequeInFavourOf, remarks } = await req.json();
+    const { applicationId, chequeInFavourOf } = await req.json();
 
     if (!applicationId || !chequeInFavourOf?.trim()) {
       return NextResponse.json(
@@ -30,19 +30,15 @@ export async function POST(req: Request) {
       },
     });
 
-    const reportNotes = remarks?.trim() || 'Documents verified and Cheque Payee confirmed.';
-
-    // 2. Upsert Verification Report using the 'notes' field defined in Prisma
+    // 2. Link or create Verification Report with valid relational IDs
     await prisma.verificationReport.upsert({
       where: { applicationId },
       update: {
         volunteerId,
-        notes: reportNotes,
       },
       create: {
         applicationId,
         volunteerId,
-        notes: reportNotes,
       },
     });
 
