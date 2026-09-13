@@ -23,6 +23,8 @@ export async function POST(req: Request) {
     if (!body.courseName?.trim()) missing.push('Course / Degree Name');
     if (!body.currentYearOfStudy?.trim()) missing.push('Current Year of Study');
     if (!body.householdCategory?.trim()) missing.push('Household Category');
+    if (!body.residentialAddress?.trim()) missing.push('Residential Address');
+    if (!body.personalStatement?.trim()) missing.push('Personal Statement / Reason for Scholarship');
     if (!body.previousScoreMarks) missing.push('Previous Academic Score Marks');
     if (!body.familyAnnualIncome) missing.push('Family Annual Income');
     if (!body.annualTuitionFee) missing.push('Annual College Tuition Fee');
@@ -52,6 +54,8 @@ export async function POST(req: Request) {
         collegeName: sanitizeText(body.collegeName),
         courseName: sanitizeText(body.courseName),
         currentYearOfStudy: sanitizeText(body.currentYearOfStudy),
+        residentialAddress: sanitizeText(body.residentialAddress, 500),
+        personalStatement: sanitizeText(body.personalStatement, 2000),
         previousScoreMarks: sanitizeMarks(body.previousScoreMarks),
         familyAnnualIncome: sanitizeAmount(body.familyAnnualIncome),
         annualTuitionFee: sanitizeAmount(body.annualTuitionFee),

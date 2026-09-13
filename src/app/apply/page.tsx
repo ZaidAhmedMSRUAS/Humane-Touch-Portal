@@ -10,6 +10,8 @@ interface FormData {
   familyAnnualIncome: string;
   annualTuitionFee: string;
   householdCategory: string;
+  residentialAddress: string;
+  personalStatement: string;
   // Mandatory Documents
   marksCardUrl: string;
   incomeCertUrl: string;
@@ -30,6 +32,8 @@ export default function ApplyPage() {
     familyAnnualIncome: '',
     annualTuitionFee: '',
     householdCategory: '',
+    residentialAddress: '',
+    personalStatement: '',
     marksCardUrl: '',
     incomeCertUrl: '',
     feeDemandUrl: '',
@@ -43,7 +47,6 @@ export default function ApplyPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Cloudinary Direct Upload Handler
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, docKey: keyof FormData) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -79,15 +82,16 @@ export default function ApplyPage() {
     }
   };
 
-  // Validation function for mandatory (*) questions and documents
   const validateForm = (): string[] => {
     const errors: string[] = [];
 
-    // Academic & Financial Questions
+    // Academic & Address Questions
     if (!formData.collegeName.trim()) errors.push('College / Institution Name is required.');
     if (!formData.courseName.trim()) errors.push('Course / Degree Name is required.');
     if (!formData.currentYearOfStudy.trim()) errors.push('Current Year of Study is required.');
     if (!formData.householdCategory.trim()) errors.push('Household Category is required.');
+    if (!formData.residentialAddress.trim()) errors.push('Residential Address is required.');
+    if (!formData.personalStatement.trim()) errors.push('Personal Statement / Reason for Scholarship is required.');
 
     const marks = Number(formData.previousScoreMarks);
     if (!formData.previousScoreMarks || isNaN(marks) || marks < 0 || marks > 100) {
@@ -175,7 +179,7 @@ export default function ApplyPage() {
           </p>
         </div>
 
-        {/* Missing Fields & Documents Warning Banner */}
+        {/* Missing Fields Warning Banner */}
         {missingErrors.length > 0 && (
           <div className="p-5 bg-rose-50 border-2 border-rose-300 rounded-3xl shadow-sm text-rose-900 space-y-3">
             <div className="flex items-center gap-2">
@@ -202,7 +206,7 @@ export default function ApplyPage() {
 
         <form onSubmit={handleSubmit} className="space-y-8">
           
-          {/* Academic Details */}
+          {/* Section 1: Academic Details */}
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
             <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
               1. Academic & Institution Details
@@ -275,10 +279,47 @@ export default function ApplyPage() {
             </div>
           </div>
 
-          {/* Financial Demographics */}
+          {/* Section 2: Address & Personal Statement */}
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
             <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
-              2. Financial Demographics & Fee Requirement
+              2. Residential Address & Personal Statement
+            </h2>
+
+            <div className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Permanent Residential Address <span className="text-rose-500 font-black text-sm">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={2}
+                  placeholder="House/Flat No., Street, Area, City, State, PIN Code"
+                  value={formData.residentialAddress}
+                  onChange={(e) => setFormData({ ...formData, residentialAddress: e.target.value })}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Personal Statement / Need for Scholarship Support <span className="text-rose-500 font-black text-sm">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="Describe your family background, financial constraints, and academic aspirations..."
+                  value={formData.personalStatement}
+                  onChange={(e) => setFormData({ ...formData, personalStatement: e.target.value })}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: Financial Demographics */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+            <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
+              3. Financial Demographics & Fee Requirement
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
@@ -330,10 +371,10 @@ export default function ApplyPage() {
             </div>
           </div>
 
-          {/* Document Uploads */}
+          {/* Section 4: Mandatory Document Uploads */}
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
             <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
-              3. Mandatory Document Uploads
+              4. Mandatory Document Uploads
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -427,7 +468,7 @@ export default function ApplyPage() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-slate-900 rounded-3xl shadow-lg text-white">
             <div>
               <h4 className="text-xs font-black uppercase tracking-wider text-amber-400">Declaration</h4>
-              <p className="text-[11px] text-slate-300">I certify all details and uploaded documents are accurate.</p>
+              <p className="text-[11px] text-slate-300">I certify all details and uploaded documents are genuine and accurate.</p>
             </div>
             <button
               type="submit"
