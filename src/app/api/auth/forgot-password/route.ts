@@ -4,49 +4,44 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(req: Request) {
   try {
-    const { phone, code, newPassword } = await req.json();
+    const { identifier, newPassword, otpCode } = await req.json();
 
-    if (!phone || !code || !newPassword) {
-      return NextResponse.json({ error: 'Phone number, OTP code, and new password are required.' }, { status: 400 });
+    if (!identifier || !newPassword) {
+      return NextResponse.json({ error: 'Phone number and new password are required' }, { status: 400 });
     }
 
-    if (newPassword.length < 6) {
-      return NextResponse.json({ error: 'Password must be at least 6 characters long.' }, { status: 400 });
-    }
+    const cleanPhone = String(identifier).replace(/\D/g, '').slice(-10);
 
-    const validOtp = await prisma.otpVerification.findFirst({
+    const user = await prisma.user.findFirst({
       where: {
-        identifier: phone.trim(),
-        code: code.trim(),
-        type: 'FORGOT_PASSWORD',
-        expiresAt: { gt: new Date() },
+        OR: [
+          { phone: cleanPhone },
+          { email: String(identifier).trim() },
+        ],
       },
     });
 
-    if (!validOtp) {
-      return NextResponse.json({ error: 'Invalid or expired reset OTP code.' }, { status: 400 });
+    if (!user) {
+      return NextResponse.json({ error: 'No account registered with this phone/email' }, { status: 404 });
     }
 
-    // Clear the OTP
-    await prisma.otpVerification.delete({ where: { id: validOtp.id } });
+    if (String(newPassword).length < 6) {
+      return NextResponse.json({ error: 'New password must be at least 6 characters' }, { status: 400 });
+    }
 
-    // Update password across any active roles for this phone number
-    const passwordHash = await bcrypt.hash(newPassword, 10);
-    const updated = await prisma.user.updateMany({
-      where: { phone: phone.trim() },
+    const passwordHash = await bcrypt.hash(String(newPassword).trim(), 10);
+
+    await prisma.user.update({
+      where: { id: user.id },
       data: { passwordHash },
     });
 
-    if (updated.count === 0) {
-      return NextResponse.json({ error: 'No user account found associated with this mobile number.' }, { status: 404 });
-    }
-
     return NextResponse.json({
       success: true,
-      message: 'Password reset successfully! You can now log in with your new password.',
+      message: `Password updated successfully for ${user.fullName}. You can now sign in.`,
     });
-  } catch (err: any) {
-    console.error('Forgot password error:', err);
-    return NextResponse.json({ error: 'Failed to reset password.' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Forgot password error:', error);
+    return NextResponse.json({ error: error.message || 'Password reset failed' }, { status: 500 });
   }
 }
