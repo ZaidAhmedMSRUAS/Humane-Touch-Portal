@@ -11,15 +11,37 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = session.user as any;
-    const isHeadVolunteerOrAdmin =
-      user.role === UserRole.ADMIN ||
-      (user.role === UserRole.VOLUNTEER && user.phone === '9972533519'); // Nimra M
+    const sessionUser = session.user as any;
 
-    // Head volunteer / Admin sees all; regular volunteers see their allotted students
+    // Resolve user from database by ID, phone, or email
+    const dbUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          sessionUser.id ? { id: sessionUser.id } : undefined,
+          sessionUser.phone ? { phone: sessionUser.phone } : undefined,
+          sessionUser.email ? { email: sessionUser.email } : undefined,
+        ].filter(Boolean) as any,
+      },
+    });
+
+    if (!dbUser) {
+      return NextResponse.json({ error: 'User record not found.' }, { status: 404 });
+    }
+
+    const isHeadVolunteerOrAdmin =
+      dbUser.role === UserRole.ADMIN ||
+      dbUser.phone === '9972533519' || // Nimra M (Head Volunteer)
+      dbUser.fullName?.toLowerCase().includes('nimra');
+
+    // Head volunteer / Admin sees all; regular volunteers see their assigned students
     const whereClause = isHeadVolunteerOrAdmin
       ? {}
-      : { assignedVolunteerId: user.id };
+      : {
+          OR: [
+            { assignedVolunteerId: dbUser.id },
+            { assignedVolunteer: { phone: dbUser.phone } },
+          ],
+        };
 
     const applications = await prisma.application.findMany({
       where: whereClause,
@@ -39,7 +61,6 @@ export async function GET() {
             phone: true,
           },
         },
-        verificationReport: true,
       },
       orderBy: { createdAt: 'desc' },
     });

@@ -11,16 +11,13 @@ export default function VolunteerVerificationModal({ app, onClose, onSuccess }: 
   const [chequeInFavourOf, setChequeInFavourOf] = useState(
     app.chequeInFavourOf || app.collegeName || ''
   );
-  const [remarks, setRemarks] = useState(
-    app.verificationReport?.notes || app.verificationReport?.remarks || ''
-  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chequeInFavourOf.trim()) {
-      setError('Please specify the official "Cheque In Favour Of" college/institution name.');
+      setError('Please specify the official "Cheque In Favour Of" college payee name.');
       return;
     }
 
@@ -33,21 +30,20 @@ export default function VolunteerVerificationModal({ app, onClose, onSuccess }: 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           applicationId: app.id,
-          chequeInFavourOf,
-          remarks,
+          chequeInFavourOf: chequeInFavourOf.trim(),
         }),
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
-        alert('Verification report & Cheque Payee saved successfully!');
+        alert('Verification complete & Cheque Payee saved successfully!');
         onSuccess();
         onClose();
       } else {
-        setError(data.error || 'Failed to submit verification report.');
+        setError(data.error || 'Failed to submit verification.');
       }
     } catch (err: any) {
-      setError(err.message || 'Network error occurred.');
+      setError(err.message || 'Network error');
     } finally {
       setSubmitting(false);
     }
@@ -55,16 +51,16 @@ export default function VolunteerVerificationModal({ app, onClose, onSuccess }: 
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl space-y-6 my-8">
+      <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl space-y-5 my-8">
         
         {/* Header */}
         <div className="flex justify-between items-center pb-3 border-b border-slate-100">
           <div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded border border-amber-200">
+            <span className="text-[10px] font-black uppercase tracking-widest text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded border border-amber-200">
               Assigned Field Verification
             </span>
             <h3 className="text-lg font-black text-slate-900 mt-1">
-              Verify Documents & Cheque Payee: {app.student?.fullName || app.studentName}
+              Document Verification & Cheque Payee: {app.student?.fullName || app.studentName}
             </h3>
             <p className="text-xs font-mono font-bold text-amber-800">{app.referenceNumber}</p>
           </div>
@@ -77,11 +73,11 @@ export default function VolunteerVerificationModal({ app, onClose, onSuccess }: 
           </div>
         )}
 
-        {/* Student Dossier Summary */}
+        {/* Student Dossier Information */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-100">
           <div>
             <span className="text-slate-400 text-[10px] block">Student Mobile</span>
-            <span className="font-mono font-bold text-slate-900">{app.student?.phone}</span>
+            <span className="font-mono font-bold text-slate-900">{app.student?.phone || app.studentPhone}</span>
           </div>
           <div>
             <span className="text-slate-400 text-[10px] block">Course & Year</span>
@@ -101,13 +97,13 @@ export default function VolunteerVerificationModal({ app, onClose, onSuccess }: 
         <div className="space-y-2 text-xs">
           {app.residentialAddress && (
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-              <strong className="text-slate-900 block mb-0.5">Residential Address:</strong>
+              <strong className="text-slate-900 block mb-0.5">Permanent Address:</strong>
               <p className="text-slate-600">{app.residentialAddress}</p>
             </div>
           )}
           {app.personalStatement && (
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-              <strong className="text-slate-900 block mb-0.5">Personal Statement / Need:</strong>
+              <strong className="text-slate-900 block mb-0.5">Student Statement / Financial Need:</strong>
               <p className="text-slate-600">{app.personalStatement}</p>
             </div>
           )}
@@ -117,10 +113,10 @@ export default function VolunteerVerificationModal({ app, onClose, onSuccess }: 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs pt-2 border-t border-slate-100">
           <div>
             <label className="block font-black text-slate-900 mb-1">
-              Cheque In Favour Of (College / Institution Payee Name) <span className="text-rose-500">*</span>
+              Cheque In Favour Of (College / University Payee Name) <span className="text-rose-500">*</span>
             </label>
             <p className="text-[11px] text-slate-500 mb-1.5">
-              Verify with the student's college fee demand note or bank account details to confirm the exact payee name for the cheque instrument.
+              Confirm the exact college account payee name from the fee demand note or institutional bank details.
             </p>
             <input
               type="text"
@@ -132,33 +128,20 @@ export default function VolunteerVerificationModal({ app, onClose, onSuccess }: 
             />
           </div>
 
-          <div>
-            <label className="block font-bold text-slate-700 mb-1">
-              Volunteer Field / Scrutiny Notes
-            </label>
-            <textarea
-              rows={2}
-              placeholder="e.g. Verified original marks card, fee structure, and family background in person."
-              value={remarks}
-              onChange={(e) => setRemarks(e.target.value)}
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-amber-500"
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer"
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl shadow transition cursor-pointer disabled:opacity-50"
+              className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl shadow transition cursor-pointer disabled:opacity-50"
             >
-              {submitting ? 'Saving Assessment...' : '✓ Submit Verification & Save Payee'}
+              {submitting ? 'Saving...' : '✓ Complete Verification & Save Cheque Payee'}
             </button>
           </div>
         </form>
