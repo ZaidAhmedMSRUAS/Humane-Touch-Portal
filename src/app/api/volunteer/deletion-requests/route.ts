@@ -11,17 +11,12 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const requesterRole = (session.user as any).role;
-    if (requesterRole !== UserRole.VOLUNTEER && requesterRole !== UserRole.ADMIN) {
-      return NextResponse.json({ error: 'Access restricted to volunteers' }, { status: 403 });
-    }
-
     const requests = await prisma.studentDeletionRequest.findMany({
       orderBy: { createdAt: 'desc' },
     });
 
     return NextResponse.json({ success: true, requests });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Failed to fetch requests' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Failed to fetch deletion requests' }, { status: 500 });
   }
 }

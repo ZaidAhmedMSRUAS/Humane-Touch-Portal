@@ -8,7 +8,7 @@ export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session || (session.user as any).role !== UserRole.ADMIN) {
-      return NextResponse.json({ error: 'Admin access required.' }, { status: 403 });
+      return NextResponse.json({ error: 'Admin authorization required.' }, { status: 403 });
     }
 
     const requests = await prisma.studentDeletionRequest.findMany({
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session || (session.user as any).role !== UserRole.ADMIN) {
-      return NextResponse.json({ error: 'Admin approval required.' }, { status: 403 });
+      return NextResponse.json({ error: 'Admin authorization required.' }, { status: 403 });
     }
 
     const { requestId, action, adminRemarks } = await req.json();
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     });
 
     if (!requestRecord || requestRecord.status !== 'PENDING') {
-      return NextResponse.json({ error: 'Valid pending request not found.' }, { status: 404 });
+      return NextResponse.json({ error: 'Pending request not found.' }, { status: 404 });
     }
 
     const adminName = session.user?.name || 'Zaid Ahmed (Admin)';
@@ -43,36 +43,34 @@ export async function POST(req: Request) {
     if (action === 'APPROVE') {
       // 1. Find all application IDs belonging to the student
       const studentApps = await prisma.application.findMany({
-        where: {
-          student: { id: requestRecord.studentId },
-        },
+        where: { studentId: requestRecord.studentId },
         select: { id: true },
       });
       const appIds = studentApps.map((a) => a.id);
 
-      // 2. Cascade delete dependent verification reports
       if (appIds.length > 0) {
+        // 2. Cascade delete dependent verification reports
         await prisma.verificationReport.deleteMany({
           where: { applicationId: { in: appIds } },
         });
 
-        // 3. Delete the applications
+        // 3. Delete student applications
         await prisma.application.deleteMany({
           where: { id: { in: appIds } },
         });
       }
 
-      // 4. Delete the student User record
+      // 4. Delete student User record
       await prisma.user.deleteMany({
         where: { id: requestRecord.studentId },
       });
 
-      // 5. Update request status to APPROVED
+      // 5. Mark request as APPROVED
       await prisma.studentDeletionRequest.update({
         where: { id: requestId },
         data: {
           status: 'APPROVED',
-          adminRemarks: adminRemarks || 'Approved and student purged from database.',
+          adminRemarks: adminRemarks || 'Approved by Admin Zaid Ahmed and purged from database.',
           resolvedAt: new Date(),
           resolvedBy: adminName,
         },
@@ -80,7 +78,7 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         success: true,
-        message: `Student ${requestRecord.studentName} has been permanently deleted with Admin approval.`,
+        message: `Student ${requestRecord.studentName} has been permanently deleted from the database.`,
       });
     } else {
       // REJECT ACTION
@@ -88,7 +86,7 @@ export async function POST(req: Request) {
         where: { id: requestId },
         data: {
           status: 'REJECTED',
-          adminRemarks: adminRemarks || 'Rejected by Admin.',
+          adminRemarks: adminRemarks || 'Rejected by Admin Zaid Ahmed.',
           resolvedAt: new Date(),
           resolvedBy: adminName,
         },

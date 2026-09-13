@@ -30,13 +30,13 @@ export default function RequestStudentDeletionModal({ student, onClose, onSucces
           studentId: student.id,
           studentName: student.fullName,
           studentPhone: student.phone,
-          reason,
+          reason: reason.trim(),
         }),
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
-        alert(`Deletion request submitted successfully for ${student.fullName}. Awaiting Admin Zaid Ahmed's approval.`);
+        alert(`Deletion request submitted successfully for ${student.fullName}. Forwarded to Admin Zaid Ahmed for authorization.`);
         onSuccess();
         onClose();
       } else {
@@ -56,14 +56,14 @@ export default function RequestStudentDeletionModal({ student, onClose, onSucces
           <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
             <span>🗑️</span> Request Student Deletion
           </h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 font-bold text-slate-600">✕</button>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 font-bold text-slate-600 hover:bg-slate-200 transition">✕</button>
         </div>
 
         <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-900 space-y-1">
           <p><strong>Student:</strong> {student.fullName}</p>
           <p><strong>Phone:</strong> {student.phone}</p>
           <p className="text-[11px] text-rose-700 mt-1">
-            This request will be routed to Admin Zaid Ahmed for permanent database purging.
+            This request will be routed directly to Admin Zaid Ahmed for database purging.
           </p>
         </div>
 
@@ -81,7 +81,7 @@ export default function RequestStudentDeletionModal({ student, onClose, onSucces
             <textarea
               required
               rows={3}
-              placeholder="e.g. Duplicate test application, student opted out, invalid contact details..."
+              placeholder="e.g. Duplicate profile, false application, opted out of scholarship..."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-amber-500"
@@ -92,7 +92,7 @@ export default function RequestStudentDeletionModal({ student, onClose, onSucces
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-slate-100 font-bold rounded-xl text-slate-700"
+              className="px-4 py-2 bg-slate-100 font-bold rounded-xl text-slate-700 hover:bg-slate-200 transition"
             >
               Cancel
             </button>
@@ -101,7 +101,7 @@ export default function RequestStudentDeletionModal({ student, onClose, onSucces
               disabled={submitting}
               className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow transition disabled:opacity-50"
             >
-              {submitting ? 'Submitting...' : 'Submit to Admin'}
+              {submitting ? 'Submitting...' : 'Forward to Admin Zaid'}
             </button>
           </div>
         </form>

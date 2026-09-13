@@ -29,10 +29,10 @@ export default function VolunteerDeletionTracker() {
       <div className="flex justify-between items-center pb-3 border-b border-slate-100">
         <div>
           <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-            Submitted Student Deletion Requests
+            Submitted Deletion Requests
           </h3>
           <p className="text-xs text-slate-500">
-            Track student record deletion requests awaiting approval from Admin Zaid
+            Track student record deletion requests awaiting approval from Admin Zaid Ahmed
           </p>
         </div>
         <button
@@ -44,7 +44,7 @@ export default function VolunteerDeletionTracker() {
       </div>
 
       {loading ? (
-        <p className="text-xs text-slate-400 py-6 text-center">Loading requests...</p>
+        <p className="text-xs text-slate-400 py-6 text-center">Loading status...</p>
       ) : requests.length === 0 ? (
         <div className="py-6 text-center text-slate-500 text-xs">
           No deletion requests currently logged.
@@ -71,7 +71,7 @@ export default function VolunteerDeletionTracker() {
                   {new Date(req.createdAt).toLocaleDateString('en-IN')}
                 </p>
                 {req.adminRemarks && (
-                  <p className="text-[11px] text-slate-600 italic mt-1">
+                  <p className="text-[11px] text-slate-600 italic mt-1 bg-white p-2 rounded-lg border border-slate-200">
                     Admin Note: "{req.adminRemarks}"
                   </p>
                 )}
@@ -79,17 +79,17 @@ export default function VolunteerDeletionTracker() {
 
               <div>
                 {req.status === 'PENDING' && (
-                  <span className="px-3 py-1.5 bg-amber-100 text-amber-800 text-xs font-black rounded-xl inline-flex items-center gap-1.5">
+                  <span className="px-3 py-1.5 bg-amber-100 text-amber-900 text-xs font-black rounded-xl inline-flex items-center gap-1.5 border border-amber-300">
                     ⏳ Pending Admin Approval
                   </span>
                 )}
                 {req.status === 'APPROVED' && (
-                  <span className="px-3 py-1.5 bg-emerald-100 text-emerald-800 text-xs font-black rounded-xl inline-flex items-center gap-1.5">
-                    ✓ Approved & Deleted
+                  <span className="px-3 py-1.5 bg-emerald-100 text-emerald-900 text-xs font-black rounded-xl inline-flex items-center gap-1.5 border border-emerald-300">
+                    ✓ Approved & Purged
                   </span>
                 )}
                 {req.status === 'REJECTED' && (
-                  <span className="px-3 py-1.5 bg-rose-100 text-rose-800 text-xs font-black rounded-xl inline-flex items-center gap-1.5">
+                  <span className="px-3 py-1.5 bg-rose-100 text-rose-900 text-xs font-black rounded-xl inline-flex items-center gap-1.5 border border-rose-300">
                     ✕ Rejected by Admin
                   </span>
                 )}
