@@ -1,12 +1,11 @@
 'use client';
-import React from 'react';
+import React, { useRef, useState } from 'react';
 
 interface Props {
   app: any;
   onClose: () => void;
 }
 
-// Convert amount to Indian words format
 function numberToWords(num: number): string {
   if (!num || isNaN(num)) return 'Zero';
   const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
@@ -24,6 +23,9 @@ function numberToWords(num: number): string {
 }
 
 export default function AwardLetterModal({ app, onClose }: Props) {
+  const letterRef = useRef<HTMLDivElement>(null);
+  const [downloading, setDownloading] = useState(false);
+
   if (!app) return null;
 
   const studentName = app.student?.fullName || app.studentName || 'Zaid Ahmed';
@@ -41,21 +43,60 @@ export default function AwardLetterModal({ app, onClose }: Props) {
     year: 'numeric',
   });
 
+  const downloadFilename = `HumaneTouch_Award_Letter_${studentName.replace(/[^a-zA-Z0-9]/g, '_')}_${refNumber.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+
+  // Download PDF Handler
+  const handleDownloadPDF = async () => {
+    if (!letterRef.current) return;
+    setDownloading(true);
+
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+      const opt = {
+        margin: 8,
+        filename: downloadFilename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      };
+
+      await html2pdf().set(opt).from(letterRef.current).save();
+    } catch (err) {
+      console.error('PDF download error:', err);
+      window.print();
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto print:p-0 print:bg-white print:static">
       <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl space-y-4 my-6 print:my-0 print:p-0 print:shadow-none print:max-w-none">
         
-        {/* Modal Controls (Hidden in Print) */}
+        {/* Top Actions Bar (Hidden on Print) */}
         <div className="flex justify-between items-center pb-2 border-b border-slate-100 print:hidden">
-          <span className="text-xs font-black uppercase tracking-wider text-slate-700">
-            Official Award Sanction Letter
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black uppercase tracking-wider text-slate-800">
+              📜 Official Award Sanction Letter
+            </span>
+            <span className="text-[11px] font-mono font-bold bg-emerald-50 text-emerald-900 px-2 py-0.5 rounded border border-emerald-200">
+              {refNumber}
+            </span>
+          </div>
+
           <div className="flex items-center gap-2">
             <button
-              onClick={() => window.print()}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow transition cursor-pointer flex items-center gap-1.5"
+              onClick={handleDownloadPDF}
+              disabled={downloading}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
             >
-              🖨️ Print / Save as PDF
+              📥 {downloading ? 'Generating PDF...' : 'Download PDF'}
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl transition cursor-pointer flex items-center gap-1"
+            >
+              🖨️ Print
             </button>
             <button
               onClick={onClose}
@@ -66,9 +107,11 @@ export default function AwardLetterModal({ app, onClose }: Props) {
           </div>
         </div>
 
-        {/* Letter Sheet (Faithful Replica) */}
-        <div className="w-full bg-white border border-slate-300 p-8 sm:p-12 shadow-sm print:shadow-none print:border-none text-slate-900 font-sans text-xs sm:text-[13px] leading-relaxed">
-          
+        {/* Printable & Downloadable Letter Content */}
+        <div
+          ref={letterRef}
+          className="w-full bg-white border border-slate-300 p-8 sm:p-12 shadow-sm print:shadow-none print:border-none text-slate-900 font-sans text-xs sm:text-[13px] leading-relaxed"
+        >
           {/* Top Bar: Ref & Date */}
           <div className="flex justify-between items-start mb-4">
             <span className="font-mono font-bold text-slate-800">
@@ -111,7 +154,7 @@ export default function AwardLetterModal({ app, onClose }: Props) {
             We have the pleasure to inform you that Humane Touch Trust has approved a higher education scholarship grant under the <strong>Udaan Scholarship Program</strong> for the following candidate:
           </p>
 
-          {/* Candidate & Disbursal Table */}
+          {/* Candidate Table */}
           <div className="my-4 border border-slate-400 rounded-lg overflow-hidden">
             <table className="w-full text-left text-xs sm:text-[12px]">
               <tbody className="divide-y divide-slate-300">
@@ -148,7 +191,7 @@ export default function AwardLetterModal({ app, onClose }: Props) {
 
           <p className="mb-8">Kindly acknowledge receipt of the instrument.</p>
 
-          {/* Signatory & Trust Seal */}
+          {/* Signatory & Seal */}
           <div className="pt-6 flex justify-between items-end">
             <div className="space-y-0.5">
               <div className="font-serif italic font-bold text-slate-900 text-sm">Tazaiyun Oomer</div>
@@ -164,7 +207,6 @@ export default function AwardLetterModal({ app, onClose }: Props) {
               <span className="text-[7px] font-mono">1999</span>
             </div>
           </div>
-
         </div>
 
       </div>

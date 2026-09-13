@@ -1,6 +1,5 @@
 'use client';
-import React from 'react';
-import Image from 'next/image';
+import React, { useRef, useState } from 'react';
 
 interface Props {
   app: any;
@@ -8,6 +7,9 @@ interface Props {
 }
 
 export default function CertificateModal({ app, onClose }: Props) {
+  const certRef = useRef<HTMLDivElement>(null);
+  const [downloading, setDownloading] = useState(false);
+
   if (!app) return null;
 
   const studentName = (app.student?.fullName || app.studentName || 'ZAID AHMED').toUpperCase();
@@ -16,28 +18,67 @@ export default function CertificateModal({ app, onClose }: Props) {
   const college = app.collegeName || 'MSRUAS';
   const refNumber = app.referenceNumber || 'HT/26-27/0001';
 
-  // Format ordinal date: "13th September 2026"
   const now = new Date();
   const day = now.getDate();
   const suffix = ['th', 'st', 'nd', 'rd'][(day % 10 > 3 || Math.floor((day % 100) / 10) === 1) ? 0 : day % 10];
   const monthYear = now.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
   const formattedDate = `${day}${suffix} ${monthYear}`;
 
+  const downloadFilename = `Udaan_Certificate_${studentName.replace(/[^a-zA-Z0-9]/g, '_')}_${refNumber.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+
+  // Download PDF Handler
+  const handleDownloadPDF = async () => {
+    if (!certRef.current) return;
+    setDownloading(true);
+
+    try {
+      // Dynamically load html2pdf.js
+      const html2pdf = (await import('html2pdf.js')).default;
+      const opt = {
+        margin: 6,
+        filename: downloadFilename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+      };
+
+      await html2pdf().set(opt).from(certRef.current).save();
+    } catch (err) {
+      console.error('PDF download error:', err);
+      window.print();
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto print:p-0 print:bg-white print:static">
       <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-4 my-6 print:my-0 print:p-0 print:shadow-none print:max-w-none">
         
-        {/* Modal Controls (Hidden in Print) */}
+        {/* Top Actions Bar (Hidden on Print) */}
         <div className="flex justify-between items-center pb-2 border-b border-slate-100 print:hidden">
-          <span className="text-xs font-black uppercase tracking-wider text-slate-700">
-            Official Scholar Commendation
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black uppercase tracking-wider text-slate-800">
+              🎓 Official Scholar Commendation
+            </span>
+            <span className="text-[11px] font-mono font-bold bg-amber-50 text-amber-900 px-2 py-0.5 rounded border border-amber-200">
+              {refNumber}
+            </span>
+          </div>
+
           <div className="flex items-center gap-2">
             <button
-              onClick={() => window.print()}
-              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl shadow transition cursor-pointer flex items-center gap-1.5"
+              onClick={handleDownloadPDF}
+              disabled={downloading}
+              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl shadow transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
             >
-              🖨️ Print / Save as PDF
+              📥 {downloading ? 'Generating PDF...' : 'Download PDF'}
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl transition cursor-pointer flex items-center gap-1"
+            >
+              🖨️ Print
             </button>
             <button
               onClick={onClose}
@@ -48,11 +89,13 @@ export default function CertificateModal({ app, onClose }: Props) {
           </div>
         </div>
 
-        {/* Certificate Sheet (Faithful Replica) */}
-        <div className="w-full bg-[#fdfdfd] border-[10px] border-double border-amber-600/90 p-8 sm:p-12 rounded-2xl relative text-center text-slate-900 shadow-sm print:border-8 print:border-amber-700 print:rounded-none">
-          
+        {/* Printable & Downloadable Certificate Content */}
+        <div
+          ref={certRef}
+          className="w-full bg-[#fdfdfd] border-[10px] border-double border-amber-600/90 p-8 sm:p-12 rounded-2xl relative text-center text-slate-900 shadow-sm print:border-8 print:border-amber-700 print:rounded-none"
+        >
           {/* Header & Logo */}
-          <div className="flex flex-col items-center justify-center space-y-1 mb-4">
+          <div className="flex flex-col items-center justify-center space-y-0.5 mb-4">
             <div className="flex items-center justify-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-amber-500 text-white font-black text-xs flex items-center justify-center">
                 HT
@@ -68,7 +111,7 @@ export default function CertificateModal({ app, onClose }: Props) {
           </div>
 
           {/* Certificate Title */}
-          <div className="my-4">
+          <div className="my-3">
             <h1 className="text-xl sm:text-2xl font-black tracking-widest uppercase font-serif text-slate-950">
               Certificate of Accomplishment
             </h1>
@@ -82,7 +125,7 @@ export default function CertificateModal({ app, onClose }: Props) {
           </p>
 
           {/* Student Name */}
-          <div className="my-4">
+          <div className="my-3">
             <h2 className="text-2xl sm:text-3xl font-black text-slate-950 font-serif tracking-wider border-b-2 border-slate-300 inline-block px-8 pb-1">
               {studentName}
             </h2>
@@ -98,9 +141,8 @@ export default function CertificateModal({ app, onClose }: Props) {
             in recognition of exceptional academic merit, outstanding character, and dedication toward higher learning, having successfully qualified for educational financial sponsorship on this <strong className="text-slate-900">{formattedDate}</strong>.
           </p>
 
-          {/* Bottom Badges & Footer */}
+          {/* Bottom Badges & Signatures */}
           <div className="mt-8 pt-6 border-t border-slate-200 grid grid-cols-3 items-end text-xs">
-            
             {/* Left: Verified Seal */}
             <div className="flex flex-col items-start text-left">
               <div className="w-16 h-16 rounded-full border-2 border-amber-600/60 p-1 flex flex-col items-center justify-center text-center text-amber-800 font-black">
@@ -110,7 +152,7 @@ export default function CertificateModal({ app, onClose }: Props) {
               </div>
             </div>
 
-            {/* Center: Reference & Motto */}
+            {/* Center: Ref & Motto */}
             <div className="text-center px-2 space-y-1">
               <div className="inline-block bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded text-[10px] font-mono font-bold text-amber-900">
                 REF: {refNumber} • Sanction Approved
@@ -120,16 +162,14 @@ export default function CertificateModal({ app, onClose }: Props) {
               </p>
             </div>
 
-            {/* Right: Trustee Signature */}
+            {/* Right: Signature */}
             <div className="flex flex-col items-end text-right">
               <div className="font-serif italic font-bold text-slate-900 text-sm">Tazaiyun Oomer</div>
               <div className="border-t border-slate-400 w-32 my-0.5"></div>
               <p className="font-bold text-[10px] text-slate-800 uppercase tracking-tight">Tazaiyun Oomer</p>
               <p className="text-[9px] text-slate-500">Secretary Board of Trustees</p>
             </div>
-
           </div>
-
         </div>
 
       </div>
