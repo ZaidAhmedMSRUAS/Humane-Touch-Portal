@@ -12,7 +12,7 @@ interface FormData {
   householdCategory: string;
   residentialAddress: string;
   personalStatement: string;
-  // Mandatory Documents
+  // Mandatory Documents (*)
   marksCardUrl: string;
   incomeCertUrl: string;
   feeDemandUrl: string;
@@ -43,10 +43,12 @@ export default function ApplyPage() {
   });
 
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
-  const [missingErrors, setMissingErrors] = useState<string[]>([]);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  // Cloudinary Direct Upload Handler
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, docKey: keyof FormData) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -71,7 +73,7 @@ export default function ApplyPage() {
       const resData = await res.json();
       if (resData.secure_url) {
         setFormData((prev) => ({ ...prev, [docKey]: resData.secure_url }));
-        setMissingErrors((prev) => prev.filter((err) => !err.toLowerCase().includes(docKey.toLowerCase())));
+        setValidationErrors((prev) => prev.filter((err) => !err.toLowerCase().includes(docKey.toLowerCase())));
       } else {
         alert('Upload failed: ' + (resData.error?.message || 'Unknown error'));
       }
@@ -82,44 +84,45 @@ export default function ApplyPage() {
     }
   };
 
-  const validateForm = (): string[] => {
+  // Comprehensive Mandatory Question & Document Validator
+  const getMissingFields = (): string[] => {
     const errors: string[] = [];
 
-    // Academic & Address Questions
-    if (!formData.collegeName.trim()) errors.push('College / Institution Name is required.');
-    if (!formData.courseName.trim()) errors.push('Course / Degree Name is required.');
-    if (!formData.currentYearOfStudy.trim()) errors.push('Current Year of Study is required.');
-    if (!formData.householdCategory.trim()) errors.push('Household Category is required.');
-    if (!formData.residentialAddress.trim()) errors.push('Residential Address is required.');
-    if (!formData.personalStatement.trim()) errors.push('Personal Statement / Reason for Scholarship is required.');
+    // 1. Mandatory Academic & Demographic Questions
+    if (!formData.collegeName.trim()) errors.push('College / University Name is required (*)');
+    if (!formData.courseName.trim()) errors.push('Degree / Course Name is required (*)');
+    if (!formData.currentYearOfStudy.trim()) errors.push('Current Year of Study is required (*)');
+    if (!formData.householdCategory.trim()) errors.push('Household Category is required (*)');
+    if (!formData.residentialAddress.trim()) errors.push('Permanent Residential Address is required (*)');
+    if (!formData.personalStatement.trim()) errors.push('Personal Statement / Scholarship Reason is required (*)');
 
     const marks = Number(formData.previousScoreMarks);
     if (!formData.previousScoreMarks || isNaN(marks) || marks < 0 || marks > 100) {
-      errors.push('Previous Academic Score (%) must be a valid number between 0 and 100.');
+      errors.push('Previous Academic Score (%) must be a valid number between 0 and 100 (*)');
     }
 
     const income = Number(formData.familyAnnualIncome);
     if (!formData.familyAnnualIncome || isNaN(income) || income <= 0) {
-      errors.push('Family Annual Income (₹) must be greater than 0.');
+      errors.push('Family Annual Income (₹) must be greater than 0 (*)');
     }
 
     const fee = Number(formData.annualTuitionFee);
     if (!formData.annualTuitionFee || isNaN(fee) || fee <= 0) {
-      errors.push('Annual College Tuition Fee (₹) must be greater than 0.');
+      errors.push('Annual College Tuition Fee (₹) must be greater than 0 (*)');
     }
 
-    // Mandatory Document Uploads
-    if (!formData.marksCardUrl) {
+    // 2. Mandatory Asterisk (*) Document Uploads
+    if (!formData.marksCardUrl || formData.marksCardUrl.trim() === '') {
       errors.push('Mandatory Document Missing: Previous Year Marks Card / Grade Sheet (*)');
     }
-    if (!formData.incomeCertUrl) {
+    if (!formData.incomeCertUrl || formData.incomeCertUrl.trim() === '') {
       errors.push('Mandatory Document Missing: Income Certificate / Salary Slip (*)');
     }
-    if (!formData.feeDemandUrl) {
-      errors.push('Mandatory Document Missing: College Fee Demand Note (*)');
+    if (!formData.feeDemandUrl || formData.feeDemandUrl.trim() === '') {
+      errors.push('Mandatory Document Missing: College Fee Demand Note / Structure (*)');
     }
-    if (!formData.idProofUrl) {
-      errors.push('Mandatory Document Missing: Student Aadhar Card / ID Proof (*)');
+    if (!formData.idProofUrl || formData.idProofUrl.trim() === '') {
+      errors.push('Mandatory Document Missing: Student Aadhar Card / Govt ID Proof (*)');
     }
 
     return errors;
@@ -127,16 +130,17 @@ export default function ApplyPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setHasAttemptedSubmit(true);
     setSubmitError(null);
 
-    const errors = validateForm();
+    const errors = getMissingFields();
     if (errors.length > 0) {
-      setMissingErrors(errors);
+      setValidationErrors(errors);
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
-    setMissingErrors([]);
+    setValidationErrors([]);
     setSubmitting(true);
 
     try {
@@ -153,7 +157,7 @@ export default function ApplyPage() {
       } else {
         setSubmitError(data.error || 'Failed to submit application.');
         if (data.missingFields) {
-          setMissingErrors(data.missingFields);
+          setValidationErrors(data.missingFields);
         }
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -175,21 +179,24 @@ export default function ApplyPage() {
           </span>
           <h1 className="text-2xl font-black mt-2">Scholarship Application & Document Dossier</h1>
           <p className="text-xs text-slate-300 mt-1">
-            Fields and documents marked with an asterisk (<span className="text-rose-400 font-bold text-sm">*</span>) are mandatory.
+            Questions and document uploads marked with an asterisk (<span className="text-rose-400 font-bold text-sm">*</span>) are mandatory. Applications cannot be submitted without uploading all 4 required documents.
           </p>
         </div>
 
-        {/* Missing Fields Warning Banner */}
-        {missingErrors.length > 0 && (
+        {/* TOP WARNING BANNER: Missing Required Fields & Documents */}
+        {validationErrors.length > 0 && (
           <div className="p-5 bg-rose-50 border-2 border-rose-300 rounded-3xl shadow-sm text-rose-900 space-y-3">
             <div className="flex items-center gap-2">
               <span className="text-xl">⚠️</span>
               <h3 className="text-sm font-black tracking-wide">
-                Please complete all mandatory questions and upload required documents ({missingErrors.length} remaining):
+                Submission Blocked: {validationErrors.length} mandatory requirement(s) missing
               </h3>
             </div>
+            <p className="text-xs text-rose-700">
+              Please complete all asterisk-marked questions and upload the mandatory documents below:
+            </p>
             <ul className="list-disc list-inside space-y-1 text-xs font-semibold pl-2">
-              {missingErrors.map((err, idx) => (
+              {validationErrors.map((err, idx) => (
                 <li key={idx} className="text-rose-800">
                   {err}
                 </li>
@@ -220,7 +227,7 @@ export default function ApplyPage() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. M.S. Ramaiah Institute of Technology"
+                  placeholder="e.g. M.S. Ramaiah University of Applied Sciences"
                   value={formData.collegeName}
                   onChange={(e) => setFormData({ ...formData, collegeName: e.target.value })}
                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-amber-500"
@@ -307,7 +314,7 @@ export default function ApplyPage() {
                 <textarea
                   required
                   rows={3}
-                  placeholder="Describe your family background, financial constraints, and academic aspirations..."
+                  placeholder="Describe your family background, financial situation, and academic goals..."
                   value={formData.personalStatement}
                   onChange={(e) => setFormData({ ...formData, personalStatement: e.target.value })}
                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-amber-500"
@@ -371,23 +378,40 @@ export default function ApplyPage() {
             </div>
           </div>
 
-          {/* Section 4: Mandatory Document Uploads */}
+          {/* Section 4: Mandatory Document Uploads (*) */}
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-            <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
-              4. Mandatory Document Uploads
-            </h2>
+            <div className="border-b border-slate-100 pb-2">
+              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+                4. Mandatory Document Dossier Uploads
+              </h2>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                All 4 documents below are strictly required. PDF, JPG, or PNG (Max 10 MB each).
+              </p>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Marks Card */}
-              <div className={`p-4 rounded-2xl border ${formData.marksCardUrl ? 'border-emerald-300 bg-emerald-50/40' : 'border-slate-200 bg-slate-50'}`}>
+              {/* Document 1: Marks Card */}
+              <div
+                className={`p-4 rounded-2xl border-2 transition ${
+                  formData.marksCardUrl
+                    ? 'border-emerald-300 bg-emerald-50/40'
+                    : hasAttemptedSubmit
+                    ? 'border-rose-300 bg-rose-50/30'
+                    : 'border-slate-200 bg-slate-50'
+                }`}
+              >
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-xs font-bold text-slate-900">
                     Previous Year Marks Card <span className="text-rose-500 font-black text-sm">*</span>
                   </span>
                   {formData.marksCardUrl ? (
-                    <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">✓ Uploaded</span>
+                    <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
+                      ✓ Uploaded
+                    </span>
                   ) : (
-                    <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md">Required *</span>
+                    <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+                      Upload Required *
+                    </span>
                   )}
                 </div>
                 <input
@@ -399,16 +423,28 @@ export default function ApplyPage() {
                 {uploadingDoc === 'marksCardUrl' && <p className="text-[10px] text-amber-600 font-bold mt-1">Uploading...</p>}
               </div>
 
-              {/* Income Cert */}
-              <div className={`p-4 rounded-2xl border ${formData.incomeCertUrl ? 'border-emerald-300 bg-emerald-50/40' : 'border-slate-200 bg-slate-50'}`}>
+              {/* Document 2: Income Cert */}
+              <div
+                className={`p-4 rounded-2xl border-2 transition ${
+                  formData.incomeCertUrl
+                    ? 'border-emerald-300 bg-emerald-50/40'
+                    : hasAttemptedSubmit
+                    ? 'border-rose-300 bg-rose-50/30'
+                    : 'border-slate-200 bg-slate-50'
+                }`}
+              >
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-xs font-bold text-slate-900">
                     Income Certificate / Slip <span className="text-rose-500 font-black text-sm">*</span>
                   </span>
                   {formData.incomeCertUrl ? (
-                    <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">✓ Uploaded</span>
+                    <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
+                      ✓ Uploaded
+                    </span>
                   ) : (
-                    <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md">Required *</span>
+                    <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+                      Upload Required *
+                    </span>
                   )}
                 </div>
                 <input
@@ -420,16 +456,28 @@ export default function ApplyPage() {
                 {uploadingDoc === 'incomeCertUrl' && <p className="text-[10px] text-amber-600 font-bold mt-1">Uploading...</p>}
               </div>
 
-              {/* Fee Demand Note */}
-              <div className={`p-4 rounded-2xl border ${formData.feeDemandUrl ? 'border-emerald-300 bg-emerald-50/40' : 'border-slate-200 bg-slate-50'}`}>
+              {/* Document 3: Fee Demand Note */}
+              <div
+                className={`p-4 rounded-2xl border-2 transition ${
+                  formData.feeDemandUrl
+                    ? 'border-emerald-300 bg-emerald-50/40'
+                    : hasAttemptedSubmit
+                    ? 'border-rose-300 bg-rose-50/30'
+                    : 'border-slate-200 bg-slate-50'
+                }`}
+              >
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-xs font-bold text-slate-900">
                     College Fee Demand Note <span className="text-rose-500 font-black text-sm">*</span>
                   </span>
                   {formData.feeDemandUrl ? (
-                    <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">✓ Uploaded</span>
+                    <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
+                      ✓ Uploaded
+                    </span>
                   ) : (
-                    <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md">Required *</span>
+                    <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+                      Upload Required *
+                    </span>
                   )}
                 </div>
                 <input
@@ -441,16 +489,28 @@ export default function ApplyPage() {
                 {uploadingDoc === 'feeDemandUrl' && <p className="text-[10px] text-amber-600 font-bold mt-1">Uploading...</p>}
               </div>
 
-              {/* ID Proof */}
-              <div className={`p-4 rounded-2xl border ${formData.idProofUrl ? 'border-emerald-300 bg-emerald-50/40' : 'border-slate-200 bg-slate-50'}`}>
+              {/* Document 4: ID Proof */}
+              <div
+                className={`p-4 rounded-2xl border-2 transition ${
+                  formData.idProofUrl
+                    ? 'border-emerald-300 bg-emerald-50/40'
+                    : hasAttemptedSubmit
+                    ? 'border-rose-300 bg-rose-50/30'
+                    : 'border-slate-200 bg-slate-50'
+                }`}
+              >
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-xs font-bold text-slate-900">
                     Student ID / Aadhar Proof <span className="text-rose-500 font-black text-sm">*</span>
                   </span>
                   {formData.idProofUrl ? (
-                    <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">✓ Uploaded</span>
+                    <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
+                      ✓ Uploaded
+                    </span>
                   ) : (
-                    <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md">Required *</span>
+                    <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+                      Upload Required *
+                    </span>
                   )}
                 </div>
                 <input
@@ -467,15 +527,17 @@ export default function ApplyPage() {
           {/* Submission Bar */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-slate-900 rounded-3xl shadow-lg text-white">
             <div>
-              <h4 className="text-xs font-black uppercase tracking-wider text-amber-400">Declaration</h4>
-              <p className="text-[11px] text-slate-300">I certify all details and uploaded documents are genuine and accurate.</p>
+              <h4 className="text-xs font-black uppercase tracking-wider text-amber-400">Declaration & Final Submit</h4>
+              <p className="text-[11px] text-slate-300">
+                All 4 asterisk-marked documents must be uploaded before submission.
+              </p>
             </div>
             <button
               type="submit"
               disabled={submitting || uploadingDoc !== null}
-              className="w-full sm:w-auto px-8 py-3.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-2xl shadow-md transition disabled:opacity-50"
+              className="w-full sm:w-auto px-8 py-3.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-2xl shadow-md transition disabled:opacity-50 cursor-pointer"
             >
-              {submitting ? 'Submitting Application...' : 'Submit Application Dossier'}
+              {submitting ? 'Verifying & Submitting...' : 'Submit Application Dossier'}
             </button>
           </div>
 
