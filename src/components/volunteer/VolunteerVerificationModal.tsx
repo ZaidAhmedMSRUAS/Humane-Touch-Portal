@@ -12,10 +12,7 @@ export default function VolunteerVerificationModal({ app, onClose, onSuccess }: 
     app.chequeInFavourOf || app.collegeName || ''
   );
   const [remarks, setRemarks] = useState(
-    app.verificationReport?.remarks || ''
-  );
-  const [verificationStatus, setVerificationStatus] = useState(
-    app.verificationReport?.status || 'VERIFIED'
+    app.verificationReport?.notes || app.verificationReport?.remarks || ''
   );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +35,6 @@ export default function VolunteerVerificationModal({ app, onClose, onSuccess }: 
           applicationId: app.id,
           chequeInFavourOf,
           remarks,
-          verificationStatus,
         }),
       });
 
@@ -136,34 +132,17 @@ export default function VolunteerVerificationModal({ app, onClose, onSuccess }: 
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">
-                Verification Assessment Finding
-              </label>
-              <select
-                value={verificationStatus}
-                onChange={(e) => setVerificationStatus(e.target.value)}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500"
-              >
-                <option value="VERIFIED">✓ Documents & Eligibility Verified</option>
-                <option value="NEEDS_ATTENTION">⚠️ Additional Documents Required</option>
-                <option value="DISCREPANCY_FOUND">❌ Discrepancy Found in Records</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">
-                Volunteer Field / Scrutiny Notes
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Verified original marks card and fee structure in person."
-                value={remarks}
-                onChange={(e) => setRemarks(e.target.value)}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-amber-500"
-              />
-            </div>
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">
+              Volunteer Field / Scrutiny Notes
+            </label>
+            <textarea
+              rows={2}
+              placeholder="e.g. Verified original marks card, fee structure, and family background in person."
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-amber-500"
+            />
           </div>
 
           <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">

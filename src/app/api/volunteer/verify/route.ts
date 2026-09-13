@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { ApplicationStatus, UserRole } from '@prisma/client';
+import { ApplicationStatus } from '@prisma/client';
 
 export async function POST(req: Request) {
   try {
@@ -30,19 +30,19 @@ export async function POST(req: Request) {
       },
     });
 
-    // 2. Upsert Verification Report
+    const reportText = remarks?.trim() || 'Documents verified and Cheque Payee confirmed.';
+
+    // 2. Upsert Verification Report using 'notes' field
     await prisma.verificationReport.upsert({
       where: { applicationId },
       update: {
         volunteerId,
-        remarks: remarks?.trim() || 'Documents verified and Cheque Payee confirmed.',
-        status: verificationStatus || 'VERIFIED',
+        notes: reportText,
       },
       create: {
         applicationId,
         volunteerId,
-        remarks: remarks?.trim() || 'Documents verified and Cheque Payee confirmed.',
-        status: verificationStatus || 'VERIFIED',
+        notes: reportText,
       },
     });
 
