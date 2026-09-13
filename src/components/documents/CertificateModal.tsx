@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import Image from 'next/image';
 
 interface Props {
   app: any;
@@ -9,30 +10,32 @@ interface Props {
 export default function CertificateModal({ app, onClose }: Props) {
   if (!app) return null;
 
-  const studentName = app.student?.fullName || app.studentName || 'Student Scholar';
-  const issueDate = new Date().toLocaleDateString('en-IN', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
-  const grantAmount = app.sanctionedAmount || app.annualTuitionFee || 0;
+  const studentName = (app.student?.fullName || app.studentName || 'ZAID AHMED').toUpperCase();
+  const course = app.courseName || 'B. Tech';
+  const year = app.currentYearOfStudy || '1st Year';
+  const college = app.collegeName || 'MSRUAS';
+  const refNumber = app.referenceNumber || 'HT/26-27/0001';
+
+  // Format ordinal date: "13th September 2026"
+  const now = new Date();
+  const day = now.getDate();
+  const suffix = ['th', 'st', 'nd', 'rd'][(day % 10 > 3 || Math.floor((day % 100) / 10) === 1) ? 0 : day % 10];
+  const monthYear = now.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+  const formattedDate = `${day}${suffix} ${monthYear}`;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto print:p-0 print:bg-white print:static">
-      <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-6 my-8 print:my-0 print:p-0 print:shadow-none print:border-none print:max-w-none">
+      <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-4 my-6 print:my-0 print:p-0 print:shadow-none print:max-w-none">
         
-        {/* Top Actions Bar (Hidden on Print) */}
-        <div className="flex justify-between items-center pb-3 border-b border-slate-100 print:hidden">
-          <div className="flex items-center gap-2">
-            <span className="text-base font-black text-slate-900">🎓 Certificate of Accomplishment</span>
-            <span className="text-xs font-mono font-bold bg-amber-50 text-amber-900 px-2.5 py-0.5 rounded-lg border border-amber-200">
-              {app.referenceNumber || 'HT/26-27/AWARD'}
-            </span>
-          </div>
+        {/* Modal Controls (Hidden in Print) */}
+        <div className="flex justify-between items-center pb-2 border-b border-slate-100 print:hidden">
+          <span className="text-xs font-black uppercase tracking-wider text-slate-700">
+            Official Scholar Commendation
+          </span>
           <div className="flex items-center gap-2">
             <button
               onClick={() => window.print()}
-              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl shadow transition flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl shadow transition cursor-pointer flex items-center gap-1.5"
             >
               🖨️ Print / Save as PDF
             </button>
@@ -45,79 +48,86 @@ export default function CertificateModal({ app, onClose }: Props) {
           </div>
         </div>
 
-        {/* Certificate Container (A4 Landscape Formatted) */}
-        <div className="w-full bg-white border-[10px] border-double border-amber-600 p-8 sm:p-12 rounded-2xl relative text-center print:border-8 print:border-amber-700 print:rounded-none">
+        {/* Certificate Sheet (Faithful Replica) */}
+        <div className="w-full bg-[#fdfdfd] border-[10px] border-double border-amber-600/90 p-8 sm:p-12 rounded-2xl relative text-center text-slate-900 shadow-sm print:border-8 print:border-amber-700 print:rounded-none">
           
-          {/* Corner Ornaments */}
-          <div className="absolute top-3 left-3 w-6 h-6 border-t-2 border-l-2 border-amber-600"></div>
-          <div className="absolute top-3 right-3 w-6 h-6 border-t-2 border-r-2 border-amber-600"></div>
-          <div className="absolute bottom-3 left-3 w-6 h-6 border-b-2 border-l-2 border-amber-600"></div>
-          <div className="absolute bottom-3 right-3 w-6 h-6 border-b-2 border-r-2 border-amber-600"></div>
-
-          {/* Header */}
-          <div className="space-y-1 mb-6">
-            <h3 className="text-sm font-black uppercase tracking-[0.25em] text-amber-700">
-              Humane Touch Trust (Regd.)
-            </h3>
-            <p className="text-[11px] text-slate-500 font-medium">
-              Empowering Higher Education Through Udaan Scholarship Program
+          {/* Header & Logo */}
+          <div className="flex flex-col items-center justify-center space-y-1 mb-4">
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-amber-500 text-white font-black text-xs flex items-center justify-center">
+                HT
+              </div>
+              <span className="text-lg font-black tracking-tight text-slate-900 uppercase">Humane Touch</span>
+            </div>
+            <p className="text-[10px] font-black tracking-[0.25em] text-amber-800 uppercase">
+              Humane Touch Trust Estd. 1999
             </p>
-            <div className="w-20 h-0.5 bg-amber-500 mx-auto my-2"></div>
+            <p className="text-[9px] uppercase tracking-widest text-slate-500 font-bold">
+              Higher Education Scholarship Council • Udaan Scholarship
+            </p>
           </div>
 
           {/* Certificate Title */}
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight font-serif uppercase my-3">
-            Certificate of Accomplishment
-          </h1>
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
-            This is to proudly certify that
+          <div className="my-4">
+            <h1 className="text-xl sm:text-2xl font-black tracking-widest uppercase font-serif text-slate-950">
+              Certificate of Accomplishment
+            </h1>
+            <p className="text-[11px] font-extrabold text-amber-700 tracking-[0.2em] uppercase mt-0.5">
+              Udaan Scholarship 2026-27
+            </p>
+          </div>
+
+          <p className="text-xs text-slate-500 italic my-2">
+            This prestigious commendation is officially conferred upon
           </p>
 
           {/* Student Name */}
-          <div className="my-5">
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 font-serif border-b-2 border-slate-300 inline-block px-8 pb-1">
+          <div className="my-4">
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-950 font-serif tracking-wider border-b-2 border-slate-300 inline-block px-8 pb-1">
               {studentName}
             </h2>
+            <div className="text-xs font-bold text-slate-800 mt-2">
+              <span>{course} {year}</span>
+              <span className="mx-2 text-slate-400">•</span>
+              <span>{college}</span>
+            </div>
           </div>
 
-          {/* Body */}
-          <p className="text-xs sm:text-sm text-slate-700 max-w-2xl mx-auto leading-relaxed">
-            has been conferred the prestigious <strong className="text-amber-800">Humane Touch Udaan Scholarship</strong> in recognition of academic excellence and dedication towards pursuing{' '}
-            <strong className="text-slate-900">{app.courseName}</strong> at{' '}
-            <strong className="text-slate-900">{app.collegeName}</strong> for the academic cycle.
+          {/* Commendation Text */}
+          <p className="text-xs sm:text-[13px] text-slate-700 max-w-2xl mx-auto leading-relaxed mt-4">
+            in recognition of exceptional academic merit, outstanding character, and dedication toward higher learning, having successfully qualified for educational financial sponsorship on this <strong className="text-slate-900">{formattedDate}</strong>.
           </p>
 
-          {/* Sanction Ref & Award Amount */}
-          <div className="my-6 flex justify-center items-center gap-4 text-xs">
-            <div className="bg-amber-50 border border-amber-200 px-3.5 py-1 rounded-xl font-mono font-bold text-amber-900">
-              Sanction Ref: {app.referenceNumber || 'HT/26-27/AWARD'}
-            </div>
-            {grantAmount > 0 && (
-              <div className="bg-emerald-50 border border-emerald-200 px-3.5 py-1 rounded-xl font-mono font-bold text-emerald-900">
-                Grant Amount: ₹{grantAmount.toLocaleString('en-IN')}
-              </div>
-            )}
-          </div>
-
-          {/* Signatures & Seal */}
-          <div className="mt-10 pt-6 border-t border-slate-200 grid grid-cols-3 items-end text-xs">
-            <div className="text-left">
-              <p className="text-slate-400 text-[10px]">Date of Issue</p>
-              <p className="font-bold text-slate-800 mt-1">{issueDate}</p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-14 h-14 rounded-full border-2 border-dashed border-amber-500 mx-auto flex items-center justify-center text-[9px] font-black text-amber-700 uppercase">
-                Trust Seal
+          {/* Bottom Badges & Footer */}
+          <div className="mt-8 pt-6 border-t border-slate-200 grid grid-cols-3 items-end text-xs">
+            
+            {/* Left: Verified Seal */}
+            <div className="flex flex-col items-start text-left">
+              <div className="w-16 h-16 rounded-full border-2 border-amber-600/60 p-1 flex flex-col items-center justify-center text-center text-amber-800 font-black">
+                <span className="text-[7px] uppercase tracking-tighter">Humane Touch</span>
+                <span className="text-[8px] uppercase font-mono">1999</span>
+                <span className="text-[6px] text-emerald-700 tracking-tighter">Verified Scholar</span>
               </div>
             </div>
 
-            <div className="text-right">
+            {/* Center: Reference & Motto */}
+            <div className="text-center px-2 space-y-1">
+              <div className="inline-block bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded text-[10px] font-mono font-bold text-amber-900">
+                REF: {refNumber} • Sanction Approved
+              </div>
+              <p className="text-[9px] italic text-slate-500 font-serif leading-tight">
+                &ldquo;Empowering deserving minds through human dignity and educational excellence.&rdquo;
+              </p>
+            </div>
+
+            {/* Right: Trustee Signature */}
+            <div className="flex flex-col items-end text-right">
               <div className="font-serif italic font-bold text-slate-900 text-sm">Tazaiyun Oomer</div>
-              <div className="border-t border-slate-400 w-32 ml-auto my-1"></div>
-              <p className="font-bold text-[11px] text-slate-700">Secretary & Trustee</p>
-              <p className="text-[10px] text-slate-400">Humane Touch Trust</p>
+              <div className="border-t border-slate-400 w-32 my-0.5"></div>
+              <p className="font-bold text-[10px] text-slate-800 uppercase tracking-tight">Tazaiyun Oomer</p>
+              <p className="text-[9px] text-slate-500">Secretary Board of Trustees</p>
             </div>
+
           </div>
 
         </div>
