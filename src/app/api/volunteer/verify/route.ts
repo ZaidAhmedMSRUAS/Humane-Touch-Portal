@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     }
 
     const volunteerId = (session.user as any).id;
-    const { applicationId, chequeInFavourOf } = await req.json();
+    const { applicationId, chequeInFavourOf, remarks, volunteerRemarks } = await req.json();
 
     if (!applicationId || !chequeInFavourOf?.trim()) {
       return NextResponse.json(
@@ -23,25 +23,31 @@ export async function POST(req: Request) {
 
     const appId = String(applicationId);
     const volId = String(volunteerId);
+    const payee = chequeInFavourOf.trim();
+    const notes = volunteerRemarks?.trim() || remarks?.trim() || 'Documents verified and Cheque Payee confirmed.';
 
     // 1. Update Application status and Cheque Payee
     const updatedApplication = await prisma.application.update({
       where: { id: appId },
       data: {
-        chequeInFavourOf: chequeInFavourOf.trim(),
+        chequeInFavourOf: payee,
         status: ApplicationStatus.DOC_VERIFICATION,
       },
     });
 
-    // 2. Upsert Verification Report using Prisma relational connect syntax
+    // 2. Upsert Verification Report using payee string
     await prisma.verificationReport.upsert({
       where: { applicationId: appId },
       update: {
         volunteer: { connect: { id: volId } },
+        chequePayeeVerified: payee,
+        volunteerRemarks: notes,
       },
       create: {
         application: { connect: { id: appId } },
         volunteer: { connect: { id: volId } },
+        chequePayeeVerified: payee,
+        volunteerRemarks: notes,
       },
     });
 
