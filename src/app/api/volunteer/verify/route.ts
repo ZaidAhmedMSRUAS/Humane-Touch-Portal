@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     }
 
     const volunteerId = (session.user as any).id;
-    const { applicationId, chequeInFavourOf, remarks, verificationStatus } = await req.json();
+    const { applicationId, chequeInFavourOf, remarks } = await req.json();
 
     if (!applicationId || !chequeInFavourOf?.trim()) {
       return NextResponse.json(
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1. Update Application with Cheque Payee and Verification Status
+    // 1. Update Application status and Cheque Payee
     const updatedApplication = await prisma.application.update({
       where: { id: applicationId },
       data: {
@@ -30,19 +30,19 @@ export async function POST(req: Request) {
       },
     });
 
-    const reportText = remarks?.trim() || 'Documents verified and Cheque Payee confirmed.';
+    const reportNotes = remarks?.trim() || 'Documents verified and Cheque Payee confirmed.';
 
-    // 2. Upsert Verification Report using 'notes' field
+    // 2. Upsert Verification Report using the 'notes' field defined in Prisma
     await prisma.verificationReport.upsert({
       where: { applicationId },
       update: {
         volunteerId,
-        notes: reportText,
+        notes: reportNotes,
       },
       create: {
         applicationId,
         volunteerId,
-        notes: reportText,
+        notes: reportNotes,
       },
     });
 
