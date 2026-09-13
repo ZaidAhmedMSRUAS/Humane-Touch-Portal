@@ -11,7 +11,8 @@ export default function AdminDashboardPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Modal states for Cheque & Password Reset
+  // Modals state
+  const [infoModalApp, setInfoModalApp] = useState<any | null>(null);
   const [chequeModalApp, setChequeModalApp] = useState<any | null>(null);
   const [chequeNumberInput, setChequeNumberInput] = useState('');
   const [chequePayeeInput, setChequePayeeInput] = useState('');
@@ -42,7 +43,6 @@ export default function AdminDashboardPage() {
     fetchAdminData();
   }, []);
 
-  // 1. Assign Volunteer Handler
   const handleAssignVolunteer = async (applicationId: string, volunteerId: string) => {
     try {
       const res = await fetch('/api/admin/actions', {
@@ -52,7 +52,7 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        alert(data.message);
+        alert('Volunteer assigned successfully');
         fetchAdminData();
       } else {
         alert(data.error || 'Failed to assign volunteer');
@@ -62,7 +62,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // 2. Save Cheque & Disbursal Details
   const handleSaveCheque = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chequeModalApp) return;
@@ -83,7 +82,7 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        alert('Cheque & Disbursal details saved successfully!');
+        alert('Cheque & Disbursal details saved!');
         setChequeModalApp(null);
         fetchAdminData();
       } else {
@@ -96,7 +95,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // 3. Admin Reset Password
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!passwordResetUser || !newPasswordInput.trim()) return;
@@ -130,14 +128,16 @@ export default function AdminDashboardPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
-      {/* Top Header */}
+      {/* Header Banner */}
       <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-6 rounded-3xl shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 bg-amber-400/10 px-2.5 py-1 rounded-md">
             Executive Control Center
           </span>
           <h1 className="text-2xl font-black mt-2">Admin Management Dashboard</h1>
-          <p className="text-xs text-slate-300 mt-1">Supervise scholarship disbursements, assign volunteers, and manage all accounts</p>
+          <p className="text-xs text-slate-300 mt-1">
+            Access student dossiers, generate Certificates and Award Letters, and manage disbursements
+          </p>
         </div>
         <div className="flex gap-2">
           <Link
@@ -155,7 +155,7 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Navigation Tabs */}
+      {/* Tabs */}
       <div className="flex gap-2 border-b border-slate-200 pb-3">
         <button
           onClick={() => setActiveTab('applications')}
@@ -163,7 +163,7 @@ export default function AdminDashboardPage() {
             activeTab === 'applications' ? 'bg-amber-500 text-slate-950 shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
           }`}
         >
-          📄 Applications & Cheque Details ({applications.length})
+          📄 Applications & Documents ({applications.length})
         </button>
         <button
           onClick={() => setActiveTab('users')}
@@ -171,7 +171,7 @@ export default function AdminDashboardPage() {
             activeTab === 'users' ? 'bg-amber-500 text-slate-950 shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
           }`}
         >
-          👥 User Directory & Password Reset ({users.length})
+          👥 User Directory & Passwords ({users.length})
         </button>
         <button
           onClick={() => setActiveTab('deletions')}
@@ -183,10 +183,10 @@ export default function AdminDashboardPage() {
         </button>
       </div>
 
-      {/* TAB 1: Applications & Cheque Disbursal */}
+      {/* Applications & Documents List */}
       {activeTab === 'applications' && (
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
-          <h3 className="text-base font-black text-slate-900 mb-4">Scholarship Disbursals & Volunteer Assignments</h3>
+          <h3 className="text-base font-black text-slate-900 mb-4">Scholarship Applications, Certificates & Award Letters</h3>
           {loading ? (
             <p className="text-xs text-slate-400 py-8 text-center">Loading applications...</p>
           ) : applications.length === 0 ? (
@@ -198,11 +198,10 @@ export default function AdminDashboardPage() {
                   <tr>
                     <th className="py-3 px-3">Ref ID</th>
                     <th className="py-3 px-3">Student</th>
-                    <th className="py-3 px-3">Course / College</th>
+                    <th className="py-3 px-3">Course & College</th>
                     <th className="py-3 px-3">Assigned Volunteer</th>
                     <th className="py-3 px-3">Cheque Details</th>
-                    <th className="py-3 px-3">Status</th>
-                    <th className="py-3 px-3 text-right">Actions</th>
+                    <th className="py-3 px-3 text-right">Official Actions & Documents</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -226,7 +225,7 @@ export default function AdminDashboardPage() {
                           <option value="">Unassigned</option>
                           {volunteers.map((v) => (
                             <option key={v.id} value={v.id}>
-                              {v.fullName} ({v.phone})
+                              {v.fullName}
                             </option>
                           ))}
                         </select>
@@ -234,30 +233,54 @@ export default function AdminDashboardPage() {
                       <td className="py-3 px-3">
                         {app.chequeNumber ? (
                           <div>
-                            <div className="font-mono font-bold text-emerald-700">Cheque #{app.chequeNumber}</div>
+                            <div className="font-mono font-bold text-emerald-700">#{app.chequeNumber}</div>
                             <div className="text-[11px] text-slate-500">₹{app.sanctionedAmount?.toLocaleString('en-IN')}</div>
                           </div>
                         ) : (
-                          <span className="text-slate-400 italic">No cheque recorded</span>
+                          <span className="text-slate-400 italic">Pending Entry</span>
                         )}
                       </td>
-                      <td className="py-3 px-3">
-                        <span className="px-2 py-0.5 bg-amber-50 text-amber-800 font-bold rounded-md text-[10px] border border-amber-200">
-                          {app.status}
-                        </span>
-                      </td>
                       <td className="py-3 px-3 text-right">
-                        <button
-                          onClick={() => {
-                            setChequeModalApp(app);
-                            setChequeNumberInput(app.chequeNumber || '');
-                            setChequePayeeInput(app.chequeInFavourOf || app.collegeName || '');
-                            setSanctionedAmountInput(String(app.sanctionedAmount || app.annualTuitionFee || ''));
-                          }}
-                          className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-[11px] shadow-sm transition"
-                        >
-                          💳 {app.chequeNumber ? 'Edit Cheque' : 'Enter Cheque'}
-                        </button>
+                        <div className="flex justify-end items-center gap-1.5 flex-wrap">
+                          {/* 1. View Full Info Modal */}
+                          <button
+                            onClick={() => setInfoModalApp(app)}
+                            className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg text-[11px] shadow-sm transition"
+                          >
+                            ℹ️ Info
+                          </button>
+
+                          {/* 2. Certificate Download */}
+                          <Link
+                            href={`/documents/certificate/${app.id}`}
+                            target="_blank"
+                            className="px-2.5 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold rounded-lg text-[11px] transition"
+                          >
+                            🎓 Certificate
+                          </Link>
+
+                          {/* 3. Award Letter Download */}
+                          <Link
+                            href={`/documents/award-letter/${app.id}`}
+                            target="_blank"
+                            className="px-2.5 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold rounded-lg text-[11px] transition"
+                          >
+                            📜 Award Letter
+                          </Link>
+
+                          {/* 4. Cheque Entry Modal */}
+                          <button
+                            onClick={() => {
+                              setChequeModalApp(app);
+                              setChequeNumberInput(app.chequeNumber || '');
+                              setChequePayeeInput(app.chequeInFavourOf || app.collegeName || '');
+                              setSanctionedAmountInput(String(app.sanctionedAmount || app.annualTuitionFee || ''));
+                            }}
+                            className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-lg text-[11px] border border-slate-300 transition"
+                          >
+                            💳 Cheque
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -268,19 +291,18 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* TAB 2: User Directory & Reset Password */}
+      {/* Users & Password Reset */}
       {activeTab === 'users' && (
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
-          <h3 className="text-base font-black text-slate-900 mb-4">All Registered Staff & Student Accounts</h3>
+          <h3 className="text-base font-black text-slate-900 mb-4">All Registered Accounts</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold">
                 <tr>
                   <th className="py-3 px-4">Full Name</th>
                   <th className="py-3 px-4">Phone Number</th>
-                  <th className="py-3 px-4">Email</th>
                   <th className="py-3 px-4">Designation</th>
-                  <th className="py-3 px-4 text-right">Password Actions</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -288,7 +310,6 @@ export default function AdminDashboardPage() {
                   <tr key={u.id} className="hover:bg-slate-50/60 transition">
                     <td className="py-3.5 px-4 font-bold text-slate-900">{u.fullName}</td>
                     <td className="py-3.5 px-4 font-mono text-slate-700">{u.phone}</td>
-                    <td className="py-3.5 px-4 text-slate-500">{u.email || '—'}</td>
                     <td className="py-3.5 px-4">
                       <span className="px-2.5 py-1 bg-slate-100 text-slate-800 font-bold rounded-lg text-[10px]">
                         {getDesignation(u.fullName, u.role, u.phone)}
@@ -313,10 +334,71 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* TAB 3: Student Deletions Approval */}
+      {/* Deletions Approval */}
       {activeTab === 'deletions' && <PendingDeletionsAdminPanel />}
 
-      {/* MODAL: Enter / Edit Cheque Details */}
+      {/* 1. STUDENT FULL DOSSIER INFO MODAL */}
+      {infoModalApp && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 my-8">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+              <div>
+                <h3 className="text-base font-black text-slate-900">{infoModalApp.student?.fullName} - Application Dossier</h3>
+                <p className="text-xs font-mono font-bold text-amber-700">{infoModalApp.referenceNumber}</p>
+              </div>
+              <button onClick={() => setInfoModalApp(null)} className="w-8 h-8 rounded-full bg-slate-100 font-bold">✕</button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="bg-slate-50 p-3 rounded-xl"><strong>Phone:</strong> {infoModalApp.student?.phone}</div>
+              <div className="bg-slate-50 p-3 rounded-xl"><strong>Course:</strong> {infoModalApp.courseName}</div>
+              <div className="bg-slate-50 p-3 rounded-xl"><strong>College:</strong> {infoModalApp.collegeName}</div>
+              <div className="bg-slate-50 p-3 rounded-xl"><strong>Year:</strong> {infoModalApp.currentYearOfStudy}</div>
+              <div className="bg-slate-50 p-3 rounded-xl"><strong>Previous Score:</strong> {infoModalApp.previousScoreMarks}%</div>
+              <div className="bg-slate-50 p-3 rounded-xl"><strong>Annual Income:</strong> ₹{infoModalApp.familyAnnualIncome?.toLocaleString('en-IN')}</div>
+              <div className="bg-slate-50 p-3 rounded-xl"><strong>Tuition Fee:</strong> ₹{infoModalApp.annualTuitionFee?.toLocaleString('en-IN')}</div>
+              <div className="bg-slate-50 p-3 rounded-xl"><strong>Category:</strong> {infoModalApp.householdCategory}</div>
+            </div>
+
+            {infoModalApp.residentialAddress && (
+              <div className="text-xs bg-slate-50 p-3 rounded-xl">
+                <strong>Residential Address:</strong> {infoModalApp.residentialAddress}
+              </div>
+            )}
+
+            {infoModalApp.personalStatement && (
+              <div className="text-xs bg-slate-50 p-3 rounded-xl">
+                <strong>Personal Statement:</strong> {infoModalApp.personalStatement}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <Link
+                href={`/documents/certificate/${infoModalApp.id}`}
+                target="_blank"
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs"
+              >
+                🎓 View Certificate
+              </Link>
+              <Link
+                href={`/documents/award-letter/${infoModalApp.id}`}
+                target="_blank"
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs"
+              >
+                📜 View Award Letter
+              </Link>
+              <button
+                onClick={() => setInfoModalApp(null)}
+                className="px-4 py-2 bg-slate-100 font-bold rounded-xl text-slate-700 text-xs"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. CHEQUE MODAL */}
       {chequeModalApp && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
@@ -325,11 +407,8 @@ export default function AdminDashboardPage() {
               <button onClick={() => setChequeModalApp(null)} className="w-8 h-8 rounded-full bg-slate-100 font-bold">✕</button>
             </div>
             <form onSubmit={handleSaveCheque} className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Student</label>
-                <div className="p-2.5 bg-slate-50 rounded-xl font-semibold text-slate-800">
-                  {chequeModalApp.student?.fullName} ({chequeModalApp.referenceNumber})
-                </div>
+              <div className="p-2.5 bg-slate-50 rounded-xl font-semibold text-slate-800">
+                {chequeModalApp.student?.fullName} ({chequeModalApp.referenceNumber})
               </div>
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Cheque Number *</label>
@@ -343,7 +422,7 @@ export default function AdminDashboardPage() {
                 />
               </div>
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Cheque In Favour Of (College/Student) *</label>
+                <label className="block font-bold text-slate-700 mb-1">Cheque In Favour Of *</label>
                 <input
                   type="text"
                   required
@@ -385,7 +464,7 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* MODAL: Admin Password Reset */}
+      {/* 3. PASSWORD RESET MODAL */}
       {passwordResetUser && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">

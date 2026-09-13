@@ -10,32 +10,40 @@ interface Props {
 export default function RequestStudentDeletionModal({ student, onClose, onSuccess }: Props) {
   const [reason, setReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reason.trim()) {
-      alert('Please state the specific reason for requesting this deletion.');
+      setError('Please provide a specific reason for deletion.');
       return;
     }
 
     setSubmitting(true);
+    setError(null);
+
     try {
-      const res = await fetch('/api/admin/student-deletion/request', {
+      const res = await fetch('/api/volunteer/request-deletion', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentId: student.id, reason }),
+        body: JSON.stringify({
+          studentId: student.id,
+          studentName: student.fullName,
+          studentPhone: student.phone,
+          reason,
+        }),
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
-        alert(data.message);
+        alert(`Deletion request submitted successfully for ${student.fullName}. Awaiting Admin Zaid Ahmed's approval.`);
         onSuccess();
         onClose();
       } else {
-        alert(data.error || 'Failed to submit deletion request.');
+        setError(data.error || 'Failed to submit request');
       }
     } catch (err: any) {
-      alert(err.message || 'Network error');
+      setError(err.message || 'Network error');
     } finally {
       setSubmitting(false);
     }
@@ -43,53 +51,57 @@ export default function RequestStudentDeletionModal({ student, onClose, onSucces
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 p-6">
-        <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-          <div>
-            <span className="text-[10px] font-black uppercase tracking-wider text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md">
-              Volunteer Action Required
-            </span>
-            <h3 className="text-lg font-black text-slate-900 mt-1">Request Student Deletion</h3>
-          </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 font-bold">✕</button>
+      <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+          <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+            <span>🗑️</span> Request Student Deletion
+          </h3>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 font-bold text-slate-600">✕</button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 my-4">
-          <div className="p-3.5 bg-amber-50/80 rounded-2xl border border-amber-200/60 text-xs text-amber-900">
-            <p><strong>Candidate:</strong> {student.fullName} ({student.phone})</p>
-            <p className="mt-1 text-[11px] text-amber-800">
-              ⚠️ In accordance with Trust policy, student records are not immediately deleted. This request will be submitted to <strong>Admin Zaid Ahmed</strong> for final review and approval.
-            </p>
-          </div>
+        <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-900 space-y-1">
+          <p><strong>Student:</strong> {student.fullName}</p>
+          <p><strong>Phone:</strong> {student.phone}</p>
+          <p className="text-[11px] text-rose-700 mt-1">
+            This request will be routed to Admin Zaid Ahmed for permanent database purging.
+          </p>
+        </div>
 
+        {error && (
+          <div className="p-3 bg-rose-100 border border-rose-300 rounded-xl text-xs font-bold text-rose-900">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block font-bold text-slate-700 mb-1">
               Reason for Deletion Request <span className="text-rose-500">*</span>
             </label>
             <textarea
               required
-              rows={4}
+              rows={3}
+              placeholder="e.g. Duplicate test application, student opted out, invalid contact details..."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="e.g., Duplicate registration, candidate withdrew application, fake documents submitted during in-person verification..."
-              className="w-full p-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none"
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
 
-          <div className="flex justify-end space-x-3 pt-2">
+          <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 bg-slate-100 font-bold text-xs rounded-xl text-slate-700"
+              className="px-4 py-2 bg-slate-100 font-bold rounded-xl text-slate-700"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow transition disabled:opacity-50"
+              className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow transition disabled:opacity-50"
             >
-              {submitting ? 'Submitting...' : 'Submit Deletion Request'}
+              {submitting ? 'Submitting...' : 'Submit to Admin'}
             </button>
           </div>
         </form>
