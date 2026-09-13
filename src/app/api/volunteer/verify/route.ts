@@ -21,24 +21,27 @@ export async function POST(req: Request) {
       );
     }
 
+    const appId = String(applicationId);
+    const volId = String(volunteerId);
+
     // 1. Update Application status and Cheque Payee
     const updatedApplication = await prisma.application.update({
-      where: { id: applicationId },
+      where: { id: appId },
       data: {
         chequeInFavourOf: chequeInFavourOf.trim(),
         status: ApplicationStatus.DOC_VERIFICATION,
       },
     });
 
-    // 2. Link or create Verification Report with valid relational IDs
+    // 2. Upsert Verification Report using Prisma relational connect syntax
     await prisma.verificationReport.upsert({
-      where: { applicationId },
+      where: { applicationId: appId },
       update: {
-        volunteerId,
+        volunteer: { connect: { id: volId } },
       },
       create: {
-        applicationId,
-        volunteerId,
+        application: { connect: { id: appId } },
+        volunteer: { connect: { id: volId } },
       },
     });
 
