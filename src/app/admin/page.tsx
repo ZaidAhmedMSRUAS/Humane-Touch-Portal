@@ -13,7 +13,7 @@ export default function AdminDashboardPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // In-Page Modals State
+  // Modals state
   const [infoModalApp, setInfoModalApp] = useState<any | null>(null);
   const [certificateModalApp, setCertificateModalApp] = useState<any | null>(null);
   const [awardLetterModalApp, setAwardLetterModalApp] = useState<any | null>(null);
@@ -83,12 +83,11 @@ export default function AdminDashboardPage() {
           chequeNumber: chequeNumberInput,
           chequeInFavourOf: chequePayeeInput,
           sanctionedAmount: Number(sanctionedAmountInput) || chequeModalApp.annualTuitionFee,
-          status: 'APPROVED',
         }),
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        alert('Cheque details saved successfully!');
+        alert('Cheque & Disbursal details saved successfully!');
         setChequeModalApp(null);
         fetchAdminData();
       } else {
@@ -142,7 +141,7 @@ export default function AdminDashboardPage() {
           </span>
           <h1 className="text-2xl font-black mt-2">Admin Management Dashboard</h1>
           <p className="text-xs text-slate-300 mt-1">
-            Access student dossiers, view Certificates and Award Letters in-portal, and manage grants
+            Supervise disbursements, assign volunteers, and issue documents for Trustee-approved scholars
           </p>
         </div>
         <div className="flex gap-2">
@@ -161,7 +160,7 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Navigation Tabs */}
       <div className="flex gap-2 border-b border-slate-200 pb-3">
         <button
           onClick={() => setActiveTab('applications')}
@@ -189,10 +188,10 @@ export default function AdminDashboardPage() {
         </button>
       </div>
 
-      {/* Applications Table */}
+      {/* Applications & Documents List */}
       {activeTab === 'applications' && (
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
-          <h3 className="text-base font-black text-slate-900 mb-4">Scholarship Applications, In-Portal Certificates & Award Letters</h3>
+          <h3 className="text-base font-black text-slate-900 mb-4">Scholarship Applications, Disbursals & Document Issuance</h3>
           {loading ? (
             <p className="text-xs text-slate-400 py-8 text-center">Loading applications...</p>
           ) : applications.length === 0 ? (
@@ -207,87 +206,105 @@ export default function AdminDashboardPage() {
                     <th className="py-3 px-3">Course & College</th>
                     <th className="py-3 px-3">Volunteer</th>
                     <th className="py-3 px-3">Cheque Details</th>
-                    <th className="py-3 px-3 text-right">In-Portal Actions</th>
+                    <th className="py-3 px-3">Status</th>
+                    <th className="py-3 px-3 text-right">Official Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {applications.map((app) => (
-                    <tr key={app.id} className="hover:bg-slate-50/60 transition">
-                      <td className="py-3 px-3 font-mono font-bold text-amber-800">{app.referenceNumber || 'N/A'}</td>
-                      <td className="py-3 px-3">
-                        <div className="font-bold text-slate-900">{app.student?.fullName}</div>
-                        <div className="text-[11px] text-slate-400">{app.student?.phone}</div>
-                      </td>
-                      <td className="py-3 px-3">
-                        <div className="font-semibold text-slate-800">{app.courseName}</div>
-                        <div className="text-[11px] text-slate-400">{app.collegeName}</div>
-                      </td>
-                      <td className="py-3 px-3">
-                        <select
-                          value={app.assignedVolunteerId || ''}
-                          onChange={(e) => handleAssignVolunteer(app.id, e.target.value)}
-                          className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold"
-                        >
-                          <option value="">Unassigned</option>
-                          {volunteers.map((v) => (
-                            <option key={v.id} value={v.id}>
-                              {v.fullName}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="py-3 px-3">
-                        {app.chequeNumber ? (
-                          <div>
-                            <div className="font-mono font-bold text-emerald-700">#{app.chequeNumber}</div>
-                            <div className="text-[11px] text-slate-500">₹{app.sanctionedAmount?.toLocaleString('en-IN')}</div>
+                  {applications.map((app) => {
+                    const isApproved = app.status === 'APPROVED';
+
+                    return (
+                      <tr key={app.id} className="hover:bg-slate-50/60 transition">
+                        <td className="py-3 px-3 font-mono font-bold text-amber-800">{app.referenceNumber || 'N/A'}</td>
+                        <td className="py-3 px-3">
+                          <div className="font-bold text-slate-900">{app.student?.fullName}</div>
+                          <div className="text-[11px] text-slate-400">{app.student?.phone}</div>
+                        </td>
+                        <td className="py-3 px-3">
+                          <div className="font-semibold text-slate-800">{app.courseName}</div>
+                          <div className="text-[11px] text-slate-400">{app.collegeName}</div>
+                        </td>
+                        <td className="py-3 px-3">
+                          <select
+                            value={app.assignedVolunteerId || ''}
+                            onChange={(e) => handleAssignVolunteer(app.id, e.target.value)}
+                            className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold"
+                          >
+                            <option value="">Unassigned</option>
+                            {volunteers.map((v) => (
+                              <option key={v.id} value={v.id}>
+                                {v.fullName}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="py-3 px-3">
+                          {app.chequeNumber ? (
+                            <div>
+                              <div className="font-mono font-bold text-emerald-700">#{app.chequeNumber}</div>
+                              <div className="text-[11px] text-slate-500">₹{app.sanctionedAmount?.toLocaleString('en-IN')}</div>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 italic">Pending Entry</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className={`px-2 py-0.5 font-bold rounded text-[10px] border ${
+                            isApproved ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'
+                          }`}>
+                            {app.status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-right">
+                          <div className="flex justify-end items-center gap-1.5 flex-wrap">
+                            {/* Info */}
+                            <button
+                              onClick={() => setInfoModalApp(app)}
+                              className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg text-[11px] shadow-sm transition cursor-pointer"
+                            >
+                              ℹ️ Info
+                            </button>
+
+                            {/* Cheque Disbursal */}
+                            <button
+                              onClick={() => {
+                                setChequeModalApp(app);
+                                setChequeNumberInput(app.chequeNumber || '');
+                                setChequePayeeInput(app.chequeInFavourOf || app.collegeName || '');
+                                setSanctionedAmountInput(String(app.sanctionedAmount || app.annualTuitionFee || ''));
+                              }}
+                              className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-lg text-[11px] border border-slate-300 transition cursor-pointer"
+                            >
+                              💳 Cheque
+                            </button>
+
+                            {/* GATED DOCUMENTS: Only accessible after Trustee Approval */}
+                            {isApproved ? (
+                              <>
+                                <button
+                                  onClick={() => setCertificateModalApp(app)}
+                                  className="px-2.5 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold rounded-lg text-[11px] transition cursor-pointer"
+                                >
+                                  🎓 Certificate
+                                </button>
+                                <button
+                                  onClick={() => setAwardLetterModalApp(app)}
+                                  className="px-2.5 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold rounded-lg text-[11px] transition cursor-pointer"
+                                >
+                                  📜 Award Letter
+                                </button>
+                              </>
+                            ) : (
+                              <span className="text-[10px] text-slate-400 italic px-1">
+                                (Awaiting Trustee Approval)
+                              </span>
+                            )}
                           </div>
-                        ) : (
-                          <span className="text-slate-400 italic">Pending Entry</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-3 text-right">
-                        <div className="flex justify-end items-center gap-1.5 flex-wrap">
-                          {/* Info Button */}
-                          <button
-                            onClick={() => setInfoModalApp(app)}
-                            className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg text-[11px] shadow-sm transition cursor-pointer"
-                          >
-                            ℹ️ Info
-                          </button>
-
-                          {/* In-Portal Certificate Button */}
-                          <button
-                            onClick={() => setCertificateModalApp(app)}
-                            className="px-2.5 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold rounded-lg text-[11px] transition cursor-pointer"
-                          >
-                            🎓 Certificate
-                          </button>
-
-                          {/* In-Portal Award Letter Button */}
-                          <button
-                            onClick={() => setAwardLetterModalApp(app)}
-                            className="px-2.5 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold rounded-lg text-[11px] transition cursor-pointer"
-                          >
-                            📜 Award Letter
-                          </button>
-
-                          {/* Cheque Disbursal Button */}
-                          <button
-                            onClick={() => {
-                              setChequeModalApp(app);
-                              setChequeNumberInput(app.chequeNumber || '');
-                              setChequePayeeInput(app.chequeInFavourOf || app.collegeName || '');
-                              setSanctionedAmountInput(String(app.sanctionedAmount || app.annualTuitionFee || ''));
-                            }}
-                            className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-lg text-[11px] border border-slate-300 transition cursor-pointer"
-                          >
-                            💳 Cheque
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -341,7 +358,7 @@ export default function AdminDashboardPage() {
       {/* Pending Deletions */}
       {activeTab === 'deletions' && <PendingDeletionsAdminPanel />}
 
-      {/* 1. STUDENT DOSSIER MODAL */}
+      {/* DOSSIER MODAL */}
       {infoModalApp && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 my-8">
@@ -361,7 +378,7 @@ export default function AdminDashboardPage() {
               <div className="bg-slate-50 p-3 rounded-xl"><strong>Score:</strong> {infoModalApp.previousScoreMarks}%</div>
               <div className="bg-slate-50 p-3 rounded-xl"><strong>Annual Income:</strong> ₹{infoModalApp.familyAnnualIncome?.toLocaleString('en-IN')}</div>
               <div className="bg-slate-50 p-3 rounded-xl"><strong>Tuition Fee:</strong> ₹{infoModalApp.annualTuitionFee?.toLocaleString('en-IN')}</div>
-              <div className="bg-slate-50 p-3 rounded-xl"><strong>Category:</strong> {infoModalApp.householdCategory}</div>
+              <div className="bg-slate-50 p-3 rounded-xl"><strong>Status:</strong> {infoModalApp.status}</div>
             </div>
 
             {infoModalApp.residentialAddress && (
@@ -378,24 +395,6 @@ export default function AdminDashboardPage() {
 
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
               <button
-                onClick={() => {
-                  setCertificateModalApp(infoModalApp);
-                  setInfoModalApp(null);
-                }}
-                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs cursor-pointer"
-              >
-                🎓 View Certificate
-              </button>
-              <button
-                onClick={() => {
-                  setAwardLetterModalApp(infoModalApp);
-                  setInfoModalApp(null);
-                }}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs cursor-pointer"
-              >
-                📜 View Award Letter
-              </button>
-              <button
                 onClick={() => setInfoModalApp(null)}
                 className="px-4 py-2 bg-slate-100 font-bold rounded-xl text-slate-700 text-xs cursor-pointer"
               >
@@ -406,23 +405,7 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* 2. IN-PORTAL CERTIFICATE MODAL */}
-      {certificateModalApp && (
-        <CertificateModal
-          app={certificateModalApp}
-          onClose={() => setCertificateModalApp(null)}
-        />
-      )}
-
-      {/* 3. IN-PORTAL AWARD LETTER MODAL */}
-      {awardLetterModalApp && (
-        <AwardLetterModal
-          app={awardLetterModalApp}
-          onClose={() => setAwardLetterModalApp(null)}
-        />
-      )}
-
-      {/* 4. CHEQUE DISBURSAL MODAL */}
+      {/* CHEQUE MODAL */}
       {chequeModalApp && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
@@ -480,7 +463,7 @@ export default function AdminDashboardPage() {
                   disabled={actionLoading}
                   className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl shadow transition cursor-pointer"
                 >
-                  {actionLoading ? 'Saving...' : 'Save & Disburse'}
+                  {actionLoading ? 'Saving...' : 'Save Details'}
                 </button>
               </div>
             </form>
@@ -488,7 +471,7 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* 5. PASSWORD RESET MODAL */}
+      {/* PASSWORD RESET MODAL */}
       {passwordResetUser && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
@@ -530,6 +513,21 @@ export default function AdminDashboardPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* DOCUMENT MODALS */}
+      {certificateModalApp && (
+        <CertificateModal
+          app={certificateModalApp}
+          onClose={() => setCertificateModalApp(null)}
+        />
+      )}
+
+      {awardLetterModalApp && (
+        <AwardLetterModal
+          app={awardLetterModalApp}
+          onClose={() => setAwardLetterModalApp(null)}
+        />
       )}
 
     </div>
