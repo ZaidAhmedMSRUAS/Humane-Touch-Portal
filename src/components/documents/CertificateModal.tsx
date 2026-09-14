@@ -42,7 +42,7 @@ export default function CertificateModal({ app, onClose }: Props) {
 
       await html2pdf().set(opt).from(certRef.current).save();
     } catch (err) {
-      console.error('PDF download error:', err);
+      console.error('PDF generation error:', err);
       window.print();
     } finally {
       setDownloading(false);
@@ -53,7 +53,7 @@ export default function CertificateModal({ app, onClose }: Props) {
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto print:p-0 print:bg-white print:static">
       <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-4 my-6 print:my-0 print:p-0 print:shadow-none print:max-w-none">
         
-        {/* Top Actions Bar */}
+        {/* Top Control Bar */}
         <div className="flex justify-between items-center pb-2 border-b border-slate-100 print:hidden">
           <div className="flex items-center gap-2">
             <span className="text-xs font-black uppercase tracking-wider text-slate-800">
@@ -139,8 +139,9 @@ export default function CertificateModal({ app, onClose }: Props) {
             in recognition of exceptional academic merit, outstanding character, and dedication toward higher learning, having successfully qualified for educational financial sponsorship on this <strong className="text-slate-900">{formattedDate}</strong>.
           </p>
 
-          {/* Bottom Badges */}
+          {/* Badges, Seal & Signature */}
           <div className="mt-8 pt-6 border-t border-slate-200 grid grid-cols-3 items-end text-xs">
+            {/* Seal */}
             <div className="flex flex-col items-start text-left">
               <div className="w-16 h-16 rounded-full border-2 border-amber-600/60 p-1 flex flex-col items-center justify-center text-center text-amber-800 font-black">
                 <span className="text-[7px] uppercase tracking-tighter">Humane Touch</span>
@@ -149,6 +150,7 @@ export default function CertificateModal({ app, onClose }: Props) {
               </div>
             </div>
 
+            {/* Reference & Quote */}
             <div className="text-center px-2 space-y-1">
               <div className="inline-block bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded text-[10px] font-mono font-bold text-amber-900">
                 REF: {refNumber} • Sanction Approved
@@ -158,6 +160,7 @@ export default function CertificateModal({ app, onClose }: Props) {
               </p>
             </div>
 
+            {/* Signature */}
             <div className="flex flex-col items-end text-right">
               <div className="font-serif italic font-bold text-slate-900 text-sm">Tazaiyun Oomer</div>
               <div className="border-t border-slate-400 w-32 my-0.5"></div>

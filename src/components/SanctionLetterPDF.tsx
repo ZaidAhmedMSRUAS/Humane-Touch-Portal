@@ -38,16 +38,10 @@ export default function SanctionLetterPDF({ application, onClose }: LetterProps)
       }
 
       const element = document.getElementById('printable-sanction-letter');
-      if (!element) {
-        throw new Error('Printable sanction letter element was not found');
-      }
-
-      const safeStudentName = studentName.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '');
-      const safeRefNumber = refNumber.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '');
       
       const opt = {
         margin: 0, // Zero margin to prevent top white space offset
-        filename: `HumaneTouch_Award_Letter_${safeStudentName || 'Scholarship_Recipient'}_${safeRefNumber || 'Reference'}.pdf`,
+        filename: `HumaneTouch_Award_Letter_${studentName.replace(/\s+/g, '_')}_${refNumber.replace(/\//g, '_')}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { 
           scale: 2.5, 

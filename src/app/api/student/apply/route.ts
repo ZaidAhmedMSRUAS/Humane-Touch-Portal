@@ -18,18 +18,18 @@ export async function POST(req: Request) {
 
     const missing: string[] = [];
 
-    // 1. Mandatory Question Checks
+    // Mandatory Question Checks
     if (!body.collegeName || String(body.collegeName).trim() === '') missing.push('College / Institution Name');
     if (!body.courseName || String(body.courseName).trim() === '') missing.push('Course / Degree Name');
     if (!body.currentYearOfStudy || String(body.currentYearOfStudy).trim() === '') missing.push('Current Year of Study');
     if (!body.householdCategory || String(body.householdCategory).trim() === '') missing.push('Household Category');
     if (!body.residentialAddress || String(body.residentialAddress).trim() === '') missing.push('Residential Address');
     if (!body.personalStatement || String(body.personalStatement).trim() === '') missing.push('Personal Statement');
-    if (!body.previousScoreMarks) missing.push('Previous Academic Score Marks');
+    if (!body.previousScoreMarks) missing.push('Previous Academic Marks');
     if (!body.familyAnnualIncome) missing.push('Family Annual Income');
     if (!body.annualTuitionFee) missing.push('Annual College Tuition Fee');
 
-    // 2. Mandatory Document Checks
+    // Mandatory Document Upload Checks
     if (!body.marksCardUrl || String(body.marksCardUrl).trim() === '') {
       missing.push('Previous Year Marks Card / Grade Sheet (*) document');
     }

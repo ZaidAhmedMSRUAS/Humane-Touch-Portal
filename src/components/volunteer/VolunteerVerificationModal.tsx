@@ -11,6 +11,9 @@ export default function VolunteerVerificationModal({ app, onClose, onSuccess }: 
   const [chequeInFavourOf, setChequeInFavourOf] = useState(
     app.chequeInFavourOf || app.collegeName || ''
   );
+  const [volunteerRemarks, setVolunteerRemarks] = useState(
+    app.verificationReport?.volunteerRemarks || ''
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,6 +34,7 @@ export default function VolunteerVerificationModal({ app, onClose, onSuccess }: 
         body: JSON.stringify({
           applicationId: app.id,
           chequeInFavourOf: chequeInFavourOf.trim(),
+          volunteerRemarks: volunteerRemarks.trim(),
         }),
       });
 
@@ -60,7 +64,7 @@ export default function VolunteerVerificationModal({ app, onClose, onSuccess }: 
               Assigned Field Verification
             </span>
             <h3 className="text-lg font-black text-slate-900 mt-1">
-              Document Verification & Cheque Payee: {app.student?.fullName || app.studentName}
+              Document Verification & Payee: {app.student?.fullName || app.studentName}
             </h3>
             <p className="text-xs font-mono font-bold text-amber-800">{app.referenceNumber}</p>
           </div>
@@ -116,7 +120,7 @@ export default function VolunteerVerificationModal({ app, onClose, onSuccess }: 
               Cheque In Favour Of (College / University Payee Name) <span className="text-rose-500">*</span>
             </label>
             <p className="text-[11px] text-slate-500 mb-1.5">
-              Confirm the exact college account payee name from the fee demand note or institutional bank details.
+              Confirm the exact institutional payee name from the fee demand note or college bank details.
             </p>
             <input
               type="text"
@@ -125,6 +129,23 @@ export default function VolunteerVerificationModal({ app, onClose, onSuccess }: 
               value={chequeInFavourOf}
               onChange={(e) => setChequeInFavourOf(e.target.value)}
               className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-amber-500"
+            />
+          </div>
+
+          {/* Volunteer Comments Field */}
+          <div>
+            <label className="block font-black text-slate-900 mb-1">
+              Volunteer Verification Comments / Field Observations
+            </label>
+            <p className="text-[11px] text-slate-500 mb-1.5">
+              Record physical document scrutiny observations, original fee receipts checked, and family situation assessment for the Trustees.
+            </p>
+            <textarea
+              rows={3}
+              placeholder="e.g. Verified original 12th marks card, income certificate, and fee demand note in person. Family situation is genuine."
+              value={volunteerRemarks}
+              onChange={(e) => setVolunteerRemarks(e.target.value)}
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
 
@@ -141,7 +162,7 @@ export default function VolunteerVerificationModal({ app, onClose, onSuccess }: 
               disabled={submitting}
               className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl shadow transition cursor-pointer disabled:opacity-50"
             >
-              {submitting ? 'Saving...' : '✓ Complete Verification & Save Cheque Payee'}
+              {submitting ? 'Saving...' : '✓ Complete Verification & Save Comments'}
             </button>
           </div>
         </form>
