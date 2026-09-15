@@ -1,135 +1,179 @@
-"use client";
+'use client';
+import React, { useRef, useState } from 'react';
 
-import React from "react";
-import Image from "next/image";
-
-export interface CertificateData {
-  certificateId: string;
-  studentName: string;
-  usn: string;
-  collegeName: string;
-  course: string;
-  yearOfStudy?: string;
-  academicYear: string;
-  scholarshipScheme: string;
-  awardedDate: string;
-  managingTrusteeName?: string;
-  presidentName?: string;
-  organizationName?: string;
+export interface CertificateModalProps {
+  app: any;
+  onClose: () => void;
 }
 
-interface CertificateProps {
-  data: CertificateData;
-  onPrint?: () => void;
-  showPrintButton?: boolean;
-}
+export function CertificateModal({ app, onClose }: CertificateModalProps) {
+  const certRef = useRef<HTMLDivElement>(null);
+  const [downloading, setDownloading] = useState(false);
 
-export const CertificateTemplate: React.FC<CertificateProps> = ({
-  data,
-  onPrint,
-  showPrintButton = true,
-}) => {
-  const handlePrint = () => {
-    if (onPrint) {
-      onPrint();
-    } else {
+  if (!app) return null;
+
+  const studentName = (app.student?.fullName || app.studentName || 'ZAID AHMED').toUpperCase();
+  const course = app.courseName || 'B. Tech';
+  const year = app.currentYearOfStudy || '1st Year';
+  const college = app.collegeName || 'MSRUAS';
+  const refNumber = app.referenceNumber || 'HT/26-27/0001';
+
+  const now = new Date();
+  const day = now.getDate();
+  const suffix = ['th', 'st', 'nd', 'rd'][(day % 10 > 3 || Math.floor((day % 100) / 10) === 1) ? 0 : day % 10];
+  const monthYear = now.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+  const formattedDate = `${day}${suffix} ${monthYear}`;
+
+  const downloadFilename = `Udaan_Certificate_${studentName.replace(/[^a-zA-Z0-9]/g, '_')}_${refNumber.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+
+  const handleDownloadPDF = async () => {
+    if (!certRef.current) return;
+    setDownloading(true);
+
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+      const opt = {
+        margin: 6,
+        filename: downloadFilename,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' as const },
+      };
+
+      await html2pdf().set(opt).from(certRef.current).save();
+    } catch (err) {
+      console.error('PDF generation error:', err);
       window.print();
+    } finally {
+      setDownloading(false);
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center p-4 sm:p-6">
-      {/* Action Bar (Hidden in Print) */}
-      {showPrintButton && (
-        <div className="w-full max-w-4xl mb-4 flex justify-end gap-3 print:hidden">
-          <button
-            onClick={handlePrint}
-            className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors"
-          >
-            <svg
-              className="w-4 h-4 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto print:p-0 print:bg-white print:static">
+      <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-4 my-6 print:my-0 print:p-0 print:shadow-none print:max-w-none">
+        
+        {/* Actions Bar */}
+        <div className="flex justify-between items-center pb-2 border-b border-slate-100 print:hidden">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black uppercase tracking-wider text-slate-800">
+              🎓 Official Scholar Commendation
+            </span>
+            <span className="text-[11px] font-mono font-bold bg-amber-50 text-amber-900 px-2 py-0.5 rounded border border-amber-200">
+              {refNumber}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDownloadPDF}
+              disabled={downloading}
+              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl shadow transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-              />
-            </svg>
-            Print / Save as PDF
-          </button>
+              📥 {downloading ? 'Generating PDF...' : 'Download PDF'}
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl transition cursor-pointer flex items-center gap-1"
+            >
+              🖨️ Print
+            </button>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 font-bold text-slate-600 flex items-center justify-center transition cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
         </div>
-      )}
 
-      {/* Certificate Frame */}
-      <div className="w-full max-w-4xl bg-amber-50/40 border-[12px] border-double border-slate-800 p-8 md:p-12 shadow-2xl relative text-slate-800 certificate-printable font-serif">
-        {/* Decorative Inner Border */}
-        <div className="border border-amber-600/40 p-6 md:p-8 relative">
-          {/* Header Section */}
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl md:text-3xl font-bold tracking-wider uppercase text-slate-900 font-sans">
-              {data.organizationName || "HUMANE TOUCH TRUST"}
-            </h2>
-            <p className="text-xs uppercase tracking-widest text-amber-700 font-semibold font-sans">
-              Empowering Education • Fostering Excellence
+        {/* Certificate Container */}
+        <div
+          ref={certRef}
+          className="w-full bg-[#fdfdfd] border-[10px] border-double border-amber-600/90 p-8 sm:p-12 rounded-2xl relative text-center text-slate-900 shadow-sm print:border-8 print:border-amber-700 print:rounded-none"
+        >
+          {/* Header */}
+          <div className="flex flex-col items-center justify-center space-y-0.5 mb-4">
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-amber-500 text-white font-black text-xs flex items-center justify-center">
+                HT
+              </div>
+              <span className="text-lg font-black tracking-tight text-slate-900 uppercase">Humane Touch</span>
+            </div>
+            <p className="text-[10px] font-black tracking-[0.25em] text-amber-800 uppercase">
+              Humane Touch Trust Estd. 1999
             </p>
-            <div className="w-24 h-0.5 bg-amber-600 mx-auto my-3" />
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 pt-2 font-serif italic">
-              Certificate of Scholarship Award
+            <p className="text-[9px] uppercase tracking-widest text-slate-500 font-bold">
+              Higher Education Scholarship Council • Udaan Scholarship
+            </p>
+          </div>
+
+          {/* Certificate Title */}
+          <div className="my-3">
+            <h1 className="text-xl sm:text-2xl font-black tracking-widest uppercase font-serif text-slate-950">
+              Certificate of Accomplishment
             </h1>
-          </div>
-
-          {/* Body Section */}
-          <div className="mt-8 text-center space-y-6 text-slate-700 leading-relaxed">
-            <p className="text-base sm:text-lg">
-              This is proudly presented to
-            </p>
-
-            <div className="space-y-1">
-              <span className="text-2xl sm:text-3xl font-bold text-indigo-950 underline decoration-amber-500 decoration-2 underline-offset-8 block">
-                {data.studentName}
-              </span>
-              <p className="text-sm font-sans text-slate-500 pt-2">
-                USN / Reg No: <span className="font-semibold text-slate-800">{data.usn}</span>
-              </p>
-            </div>
-
-            <p className="text-sm sm:text-base max-w-2xl mx-auto">
-              in recognition of academic merit, dedication, and character, officially conferring the{" "}
-              <strong className="text-slate-900 font-semibold">{data.scholarshipScheme}</strong> for{" "}
-              <strong className="text-slate-900 font-semibold">{data.course}</strong> at{" "}
-              <strong className="text-slate-900 font-semibold">{data.collegeName}</strong> for the academic year{" "}
-              <strong className="text-slate-900 font-semibold">{data.academicYear}</strong>.
+            <p className="text-[11px] font-extrabold text-amber-700 tracking-[0.2em] uppercase mt-0.5">
+              Udaan Scholarship 2026-27
             </p>
           </div>
 
-          {/* Signatures & Seal Section */}
-          <div className="mt-14 pt-6 grid grid-cols-3 items-end text-center font-sans text-xs sm:text-sm">
-            {/* Date / ID */}
-            <div className="text-left space-y-1">
-              <p className="text-slate-500">Date: <span className="text-slate-800 font-medium">{data.awardedDate}</span></p>
-              <p className="text-slate-500">Certificate ID: <span className="text-slate-800 font-mono font-medium">{data.certificateId}</span></p>
-            </div>
+          <p className="text-xs text-slate-500 italic my-2">
+            This prestigious commendation is officially conferred upon
+          </p>
 
-            {/* Official Seal / Crest */}
-            <div className="flex flex-col items-center justify-center">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-dashed border-amber-600 flex items-center justify-center text-[10px] text-amber-800 uppercase font-semibold text-center p-1 bg-amber-100/50">
-                Official Trust Seal
+          {/* Student Name */}
+          <div className="my-3">
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-950 font-serif tracking-wider border-b-2 border-slate-300 inline-block px-8 pb-1">
+              {studentName}
+            </h2>
+            <div className="text-xs font-bold text-slate-800 mt-2">
+              <span>{course} {year}</span>
+              <span className="mx-2 text-slate-400">•</span>
+              <span>{college}</span>
+            </div>
+          </div>
+
+          {/* Commendation Text */}
+          <p className="text-xs sm:text-[13px] text-slate-700 max-w-2xl mx-auto leading-relaxed mt-4">
+            in recognition of exceptional academic merit, outstanding character, and dedication toward higher learning, having successfully qualified for educational financial sponsorship on this <strong className="text-slate-900">{formattedDate}</strong>.
+          </p>
+
+          {/* Badges, Seal & Signature */}
+          <div className="mt-8 pt-6 border-t border-slate-200 grid grid-cols-3 items-end text-xs">
+            {/* Left: Seal */}
+            <div className="flex flex-col items-start text-left">
+              <div className="w-16 h-16 rounded-full border-2 border-amber-600/60 p-1 flex flex-col items-center justify-center text-center text-amber-800 font-black">
+                <span className="text-[7px] uppercase tracking-tighter">Humane Touch</span>
+                <span className="text-[8px] uppercase font-mono">1999</span>
+                <span className="text-[6px] text-emerald-700 tracking-tighter">Verified Scholar</span>
               </div>
             </div>
 
-            {/* Managing Trustee Signature */}
-            <div className="space-y-1 text-right">
-              <div className="border-b border-slate-700 w-36 ml-auto mb-1" />
-              <p className="font-bold text-slate-900">{data.managingTrusteeName || "Managing Trustee"}</p>
-              <p className="text-slate-500 text-xs">Humane Touch</p>
+            {/* Center: Ref & Motto */}
+            <div className="text-center px-2 space-y-1">
+              <div className="inline-block bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded text-[10px] font-mono font-bold text-amber-900">
+                REF: {refNumber} • Sanction Approved
+              </div>
+              <p className="text-[9px] italic text-slate-500 font-serif leading-tight">
+                &ldquo;Empowering deserving minds through human dignity and educational excellence.&rdquo;
+              </p>
+            </div>
+
+            {/* Right: Signature */}
+            <div className="flex flex-col items-end text-right">
+              <div className="font-serif italic font-bold text-slate-900 text-sm">Tazaiyun Oomer</div>
+              <div className="border-t border-slate-400 w-32 my-0.5"></div>
+              <p className="font-bold text-[10px] text-slate-800 uppercase tracking-tight">Tazaiyun Oomer</p>
+              <p className="text-[9px] text-slate-500">Secretary Board of Trustees</p>
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );
-};
+}
+
+export default CertificateModal;
+export { CertificateModal as CertificateTemplate };
