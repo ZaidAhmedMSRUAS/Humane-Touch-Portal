@@ -2,8 +2,9 @@
 import React, { useRef, useState } from 'react';
 
 export interface AwardLetterModalProps {
-  app: any;
-  onClose: () => void;
+  app?: any;
+  data?: any;
+  onClose?: () => void;
 }
 
 function numberToWords(num: number): string {
@@ -22,20 +23,21 @@ function numberToWords(num: number): string {
   return str.trim();
 }
 
-export function AwardLetterModal({ app, onClose }: AwardLetterModalProps) {
+export default function AwardLetterModal({ app, data, onClose }: AwardLetterModalProps) {
   const letterRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
 
-  if (!app) return null;
+  const item = app || data;
+  if (!item) return null;
 
-  const studentName = app.student?.fullName || app.studentName || 'Zaid Ahmed';
-  const course = app.courseName || 'B. Tech';
-  const year = app.currentYearOfStudy || '1st Year';
-  const college = app.collegeName || 'MSRUAS';
-  const amount = Number(app.sanctionedAmount || app.annualTuitionFee || 50000);
-  const chequeNumber = app.chequeNumber || '990256';
-  const chequeInFavourOf = app.chequeInFavourOf || college;
-  const refNumber = app.referenceNumber || 'HT/26-27/0001';
+  const studentName = item.student?.fullName || item.studentName || 'Zaid Ahmed';
+  const course = item.courseName || item.course || 'B. Tech';
+  const year = item.currentYearOfStudy || item.academicYear || '1st Year';
+  const college = item.collegeName || 'MSRUAS';
+  const amount = Number(item.sanctionedAmount || item.annualTuitionFee || 50000);
+  const chequeNumber = item.chequeNumber || '990256';
+  const chequeInFavourOf = item.chequeInFavourOf || item.collegeName || college;
+  const refNumber = item.referenceNumber || item.certificateId || 'HT/26-27/0001';
 
   const issueDate = new Date().toLocaleDateString('en-IN', {
     day: 'numeric',
@@ -61,10 +63,18 @@ export function AwardLetterModal({ app, onClose }: AwardLetterModalProps) {
 
       await html2pdf().set(opt).from(letterRef.current).save();
     } catch (err) {
-      console.error('PDF download error:', err);
+      console.error('PDF generation error:', err);
       window.print();
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    } else if (typeof window !== 'undefined') {
+      window.history.back();
     }
   };
 
@@ -72,7 +82,7 @@ export function AwardLetterModal({ app, onClose }: AwardLetterModalProps) {
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto print:p-0 print:bg-white print:static">
       <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl space-y-4 my-6 print:my-0 print:p-0 print:shadow-none print:max-w-none">
         
-        {/* Actions Bar */}
+        {/* Top Control Bar */}
         <div className="flex justify-between items-center pb-2 border-b border-slate-100 print:hidden">
           <div className="flex items-center gap-2">
             <span className="text-xs font-black uppercase tracking-wider text-slate-800">
@@ -98,7 +108,7 @@ export function AwardLetterModal({ app, onClose }: AwardLetterModalProps) {
               🖨️ Print
             </button>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 font-bold text-slate-600 flex items-center justify-center transition cursor-pointer"
             >
               ✕
@@ -147,13 +157,12 @@ export function AwardLetterModal({ app, onClose }: AwardLetterModalProps) {
             SUBJECT: GRANT SANCTION & DIRECT CHEQUE DISBURSAL FOR UDAAN SCHOLARSHIP
           </div>
 
-          {/* Salutation & Body */}
           <p className="mb-3 font-semibold text-slate-900">Dear Sir/Madam,</p>
           <p className="mb-4 text-justify">
             We have the pleasure to inform you that Humane Touch Trust has approved a higher education scholarship grant under the <strong>Udaan Scholarship Program</strong> for the following candidate:
           </p>
 
-          {/* Table */}
+          {/* Candidate Table */}
           <div className="my-4 border border-slate-400 rounded-lg overflow-hidden">
             <table className="w-full text-left text-xs sm:text-[12px]">
               <tbody className="divide-y divide-slate-300">
@@ -183,7 +192,7 @@ export function AwardLetterModal({ app, onClose }: AwardLetterModalProps) {
             </table>
           </div>
 
-          {/* Terms */}
+          {/* Closing Terms */}
           <p className="my-4 text-justify">
             This grant has been sanctioned following in-person document scrutiny and a personal interview conducted by the Trustees. The funds are to be adjusted exclusively toward the academic tuition fees of <strong>{studentName}</strong> for the academic year 2026-27.
           </p>
@@ -212,6 +221,3 @@ export function AwardLetterModal({ app, onClose }: AwardLetterModalProps) {
     </div>
   );
 }
-
-export default AwardLetterModal;
-export { AwardLetterModal as AwardLetterTemplate };
