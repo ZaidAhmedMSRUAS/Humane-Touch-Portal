@@ -41,7 +41,6 @@ export async function POST(req: Request) {
     const adminName = session.user?.name || 'Zaid Ahmed (Admin)';
 
     if (action === 'APPROVE') {
-      // 1. Find all application IDs belonging to the student
       const studentApps = await prisma.application.findMany({
         where: { studentId: requestRecord.studentId },
         select: { id: true },
@@ -49,23 +48,19 @@ export async function POST(req: Request) {
       const appIds = studentApps.map((a) => a.id);
 
       if (appIds.length > 0) {
-        // 2. Cascade delete dependent verification reports
         await prisma.verificationReport.deleteMany({
           where: { applicationId: { in: appIds } },
         });
 
-        // 3. Delete student applications
         await prisma.application.deleteMany({
           where: { id: { in: appIds } },
         });
       }
 
-      // 4. Delete student User record
       await prisma.user.deleteMany({
         where: { id: requestRecord.studentId },
       });
 
-      // 5. Mark request as APPROVED
       await prisma.studentDeletionRequest.update({
         where: { id: requestId },
         data: {
@@ -81,7 +76,6 @@ export async function POST(req: Request) {
         message: `Student ${requestRecord.studentName} has been permanently deleted from the database.`,
       });
     } else {
-      // REJECT ACTION
       await prisma.studentDeletionRequest.update({
         where: { id: requestId },
         data: {
@@ -100,5 +94,27 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error('Admin Deletion Action Error:', error);
     return NextResponse.json({ error: error.message || 'Action failed' }, { status: 500 });
+  }
+}
+
+export async function DELETE() {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || (session.user as any).role !== UserRole.ADMIN) {
+      return NextResponse.json({ error: 'Admin authorization required.' }, { status: 403 });
+    }
+
+    const result = await prisma.studentDeletionRequest.deleteMany({
+      where: {
+        status: { in: ['APPROVED', 'REJECTED'] },
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `Cleared ${result.count} resolved deletion record(s).`,
+    });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || 'Failed to clear history' }, { status: 500 });
   }
 }

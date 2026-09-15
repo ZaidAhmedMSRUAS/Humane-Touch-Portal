@@ -6,6 +6,7 @@ export default function PendingDeletionsAdminPanel() {
   const [loading, setLoading] = useState(true);
   const [remarksMap, setRemarksMap] = useState<{ [key: string]: string }>({});
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [clearingHistory, setClearingHistory] = useState(false);
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -60,6 +61,30 @@ export default function PendingDeletionsAdminPanel() {
     }
   };
 
+  const handleClearHistory = async () => {
+    if (!window.confirm('Are you sure you want to clear all resolved deletion history? This cannot be undone.')) {
+      return;
+    }
+
+    setClearingHistory(true);
+    try {
+      const res = await fetch('/api/admin/student-deletion/action', {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert(data.message);
+        fetchRequests();
+      } else {
+        alert(data.error || 'Failed to clear history');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Error occurred');
+    } finally {
+      setClearingHistory(false);
+    }
+  };
+
   const pendingRequests = requests.filter((r) => r.status === 'PENDING');
   const historyRequests = requests.filter((r) => r.status !== 'PENDING');
 
@@ -72,7 +97,7 @@ export default function PendingDeletionsAdminPanel() {
         </div>
         <button
           onClick={fetchRequests}
-          className="text-xs font-bold text-amber-700 hover:text-amber-800 bg-amber-50 px-3.5 py-1.5 rounded-xl transition"
+          className="text-xs font-bold text-amber-700 hover:text-amber-800 bg-amber-50 px-3.5 py-1.5 rounded-xl transition cursor-pointer"
         >
           🔄 Refresh Requests
         </button>
@@ -151,11 +176,21 @@ export default function PendingDeletionsAdminPanel() {
       {/* Resolved History */}
       {historyRequests.length > 0 && (
         <div className="pt-6 border-t border-slate-100 space-y-3">
-          <h3 className="text-xs font-black text-slate-600 uppercase tracking-wider">
-            Resolved Deletion History ({historyRequests.length})
-          </h3>
+          <div className="flex justify-between items-center">
+            <h3 className="text-xs font-black text-slate-600 uppercase tracking-wider">
+              Resolved Deletion History ({historyRequests.length})
+            </h3>
+            <button
+              onClick={handleClearHistory}
+              disabled={clearingHistory}
+              className="text-[11px] font-bold text-rose-700 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-3 py-1 rounded-xl border border-rose-200 transition cursor-pointer disabled:opacity-50"
+            >
+              {clearingHistory ? 'Clearing...' : '🗑️ Clear History'}
+            </button>
+          </div>
+
           <div className="space-y-2">
-            {historyRequests.slice(0, 10).map((req) => (
+            {historyRequests.map((req) => (
               <div
                 key={req.id}
                 className="p-3.5 rounded-xl border border-slate-100 bg-slate-50 flex justify-between items-center text-xs"
