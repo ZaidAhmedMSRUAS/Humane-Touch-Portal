@@ -4,21 +4,22 @@ export function sanitizeText(str: any, maxLength: number = 255): string {
   return str.trim().slice(0, maxLength);
 }
 
-// Strictly validate and clean 10-digit mobile number (Indian format: starts with 6-9)
-export function validateAndCleanPhone(phone: any): { isValid: boolean; cleaned: string; error?: string } {
-  if (!phone || typeof phone !== 'string') {
-    return { isValid: false, cleaned: '', error: 'Mobile number is required.' };
-  }
-
-  // Strip spaces, dashes, parentheses, and leading +91 / 0
-  let cleaned = phone.replace(/[\s\-\(\)]/g, '');
+// Sanitize phone number (strips spaces, dashes, parentheses, +91, and leading 0)
+export function sanitizePhoneNumber(phone: any): string {
+  if (!phone) return '';
+  const str = String(phone).trim();
+  let cleaned = str.replace(/[\s\-\(\)]/g, '');
   if (cleaned.startsWith('+91')) {
     cleaned = cleaned.slice(3);
   } else if (cleaned.startsWith('0')) {
     cleaned = cleaned.slice(1);
   }
+  return cleaned;
+}
 
-  // Check for exactly 10 digits starting with 6, 7, 8, or 9
+// Strictly validate and clean 10-digit mobile number (Indian format: starts with 6-9)
+export function validateAndCleanPhone(phone: any): { isValid: boolean; cleaned: string; error?: string } {
+  const cleaned = sanitizePhoneNumber(phone);
   const phoneRegex = /^[6-9]\d{9}$/;
   if (!phoneRegex.test(cleaned)) {
     return {
@@ -60,7 +61,7 @@ export function sanitizeMarks(marks: any): number {
   if (num < 0 || num > 100) {
     throw new Error('Previous academic marks cannot exceed 100% or be less than 0%.');
   }
-  return Math.round(num * 100) / 100; // Round to 2 decimal places
+  return Math.round(num * 100) / 100;
 }
 
 // Clean and sanitize monetary amounts
