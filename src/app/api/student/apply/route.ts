@@ -16,39 +16,43 @@ export async function POST(req: Request) {
     const userId = (session.user as any).id;
     const body = await req.json();
 
-    const missing: string[] = [];
+    const missingDocs: string[] = [];
 
-    // 1. Mandatory Question Checks
-    if (!body.collegeName || String(body.collegeName).trim() === '') missing.push('College / Institution Name');
-    if (!body.courseName || String(body.courseName).trim() === '') missing.push('Course / Degree Name');
-    if (!body.currentYearOfStudy || String(body.currentYearOfStudy).trim() === '') missing.push('Current Year of Study');
-    if (!body.householdCategory || String(body.householdCategory).trim() === '') missing.push('Household Category');
-    if (!body.residentialAddress || String(body.residentialAddress).trim() === '') missing.push('Residential Address');
-    if (!body.personalStatement || String(body.personalStatement).trim() === '') missing.push('Personal Statement');
-    if (!body.previousScoreMarks) missing.push('Previous Academic Score Marks');
-    if (!body.familyAnnualIncome) missing.push('Family Annual Income');
-    if (!body.annualTuitionFee) missing.push('Annual College Tuition Fee');
-
-    // 2. Strict Mandatory Document Checks
+    // Enforce 4 Mandatory Documents (*)
     if (!body.marksCardUrl || String(body.marksCardUrl).trim() === '') {
-      missing.push('Previous Year Marks Card / Grade Sheet (*) document');
+      missingDocs.push('Previous Year Marks Card / Grade Sheet (*)');
     }
     if (!body.incomeCertUrl || String(body.incomeCertUrl).trim() === '') {
-      missing.push('Income Certificate / Salary Slip (*) document');
+      missingDocs.push('Income Certificate / Salary Slip (*)');
     }
     if (!body.feeDemandUrl || String(body.feeDemandUrl).trim() === '') {
-      missing.push('College Fee Demand Note (*) document');
+      missingDocs.push('College Fee Demand Note (*)');
     }
     if (!body.idProofUrl || String(body.idProofUrl).trim() === '') {
-      missing.push('Student Aadhar Card / ID Proof (*) document');
+      missingDocs.push('Student Aadhar Card / ID Proof (*)');
     }
 
-    if (missing.length > 0) {
+    if (missingDocs.length > 0) {
       return NextResponse.json(
         {
-          error: `Submission rejected: Missing ${missing.length} mandatory requirement(s). All 4 required documents must be uploaded.`,
-          missingFields: missing,
+          error: `Submission blocked: All mandatory documents marked with an asterisk must be uploaded.`,
+          missingDocuments: missingDocs,
         },
+        { status: 400 }
+      );
+    }
+
+    // Validate Academic Information
+    if (
+      !body.collegeName ||
+      !body.courseName ||
+      !body.currentYearOfStudy ||
+      !body.householdCategory ||
+      !body.residentialAddress ||
+      !body.personalStatement
+    ) {
+      return NextResponse.json(
+        { error: 'All mandatory academic and address fields marked with (*) are required.' },
         { status: 400 }
       );
     }
