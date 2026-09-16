@@ -68,7 +68,12 @@ export default function VolunteerVerificationModal({ app, onClose, onSuccess }: 
             </h3>
             <p className="text-xs font-mono font-bold text-amber-800">{app.referenceNumber}</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 font-bold text-slate-600 cursor-pointer">âœ•</button>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 font-bold text-slate-600 cursor-pointer"
+          >
+            ✕
+          </button>
         </div>
 
         {error && (
@@ -93,7 +98,7 @@ export default function VolunteerVerificationModal({ app, onClose, onSuccess }: 
           </div>
           <div>
             <span className="text-slate-400 text-[10px] block">Annual Tuition Fee</span>
-            <span className="font-mono font-bold text-emerald-800">â‚¹{app.annualTuitionFee?.toLocaleString('en-IN')}</span>
+            <span className="font-mono font-bold text-emerald-800">₹{app.annualTuitionFee?.toLocaleString('en-IN')}</span>
           </div>
         </div>
 
@@ -112,63 +117,6 @@ export default function VolunteerVerificationModal({ app, onClose, onSuccess }: 
             </div>
           )}
         </div>
-
-        {/* Verification Form */}
-        <form onSubmit={handleSubmit} className="space-y-4 text-xs pt-2 border-t border-slate-100">
-          <div>
-            <label className="block font-black text-slate-900 mb-1">
-              Cheque In Favour Of (College / University Payee Name) <span className="text-rose-500">*</span>
-            </label>
-            <p className="text-[11px] text-slate-500 mb-1.5">
-              Confirm the exact institutional payee name from the fee demand note or college bank details.
-            </p>
-            <input
-              type="text"
-              required
-              placeholder="e.g. M.S. Ramaiah University of Applied Sciences"
-              value={chequeInFavourOf}
-              onChange={(e) => setChequeInFavourOf(e.target.value)}
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-amber-500"
-            />
-          </div>
-
-          {/* Volunteer Comments Field */}
-          <div>
-            <label className="block font-black text-slate-900 mb-1">
-              Volunteer Verification Comments / Field Observations
-            </label>
-            <p className="text-[11px] text-slate-500 mb-1.5">
-              Record physical document scrutiny observations, original fee receipts checked, and family situation assessment for the Trustees.
-            </p>
-            <textarea
-              rows={3}
-              placeholder="e.g. Verified original 12th marks card, income certificate, and fee demand note in person. Family situation is genuine."
-              value={volunteerRemarks}
-              onChange={(e) => setVolunteerRemarks(e.target.value)}
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-amber-500"
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl shadow transition cursor-pointer disabled:opacity-50"
-            >
-              {submitting ? 'Saving...' : 'âœ“ Complete Verification & Save Comments'}
-            </button>
-          </div>
-        </form>
-
-      </div>
-    </div>
 
         {/* Uploaded Documents Scrutiny Grid */}
         <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 text-xs">
@@ -244,5 +192,62 @@ export default function VolunteerVerificationModal({ app, onClose, onSuccess }: 
             )}
           </div>
         </div>
+
+        {/* Verification Form */}
+        <form onSubmit={handleSubmit} className="space-y-4 text-xs pt-2 border-t border-slate-100">
+          <div>
+            <label className="block font-black text-slate-900 mb-1">
+              Cheque In Favour Of (College / University Payee Name) <span className="text-rose-500">*</span>
+            </label>
+            <p className="text-[11px] text-slate-500 mb-1.5">
+              Confirm the exact institutional payee name from the fee demand note or college bank details.
+            </p>
+            <input
+              type="text"
+              required
+              placeholder="e.g. M.S. Ramaiah University of Applied Sciences"
+              value={chequeInFavourOf}
+              onChange={(e) => setChequeInFavourOf(e.target.value)}
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-amber-500"
+            />
+          </div>
+
+          {/* Volunteer Comments Field */}
+          <div>
+            <label className="block font-black text-slate-900 mb-1">
+              Volunteer Verification Comments / Field Observations
+            </label>
+            <p className="text-[11px] text-slate-500 mb-1.5">
+              Record physical document scrutiny observations, original fee receipts checked, and family situation assessment for the Trustees.
+            </p>
+            <textarea
+              rows={3}
+              placeholder="e.g. Verified original 10th & 12th marks cards, income certificate, and fee demand note in person. Family situation is genuine."
+              value={volunteerRemarks}
+              onChange={(e) => setVolunteerRemarks(e.target.value)}
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-amber-500"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl shadow transition cursor-pointer disabled:opacity-50"
+            >
+              {submitting ? 'Saving...' : '✓ Complete Verification & Save Comments'}
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
   );
 }
