@@ -9,7 +9,6 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { fullName, phone, email, password } = body;
 
-    // 1. Full Name Validation
     const cleanedName = sanitizeText(fullName, 100);
     if (!cleanedName || cleanedName.length < 3) {
       return NextResponse.json(
@@ -18,19 +17,16 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Mobile Number Validation
     const phoneCheck = validateAndCleanPhone(phone);
     if (!phoneCheck.isValid) {
       return NextResponse.json({ error: phoneCheck.error }, { status: 400 });
     }
 
-    // 3. Email Validation
     const emailCheck = validateEmail(email);
     if (!emailCheck.isValid) {
       return NextResponse.json({ error: emailCheck.error }, { status: 400 });
     }
 
-    // 4. Password Validation
     if (!password || typeof password !== 'string' || password.length < 6) {
       return NextResponse.json(
         { error: 'Password must be at least 6 characters long.' },
@@ -38,7 +34,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 5. Check Duplicate Phone
     const existingPhone = await prisma.user.findFirst({
       where: { phone: phoneCheck.cleaned },
     });
@@ -49,7 +44,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 6. Check Duplicate Email
     const existingEmail = await prisma.user.findFirst({
       where: { email: emailCheck.cleaned },
     });
@@ -60,7 +54,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 7. Hash Password & Create Student
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
@@ -68,8 +61,8 @@ export async function POST(req: Request) {
         fullName: cleanedName,
         phone: phoneCheck.cleaned,
         email: emailCheck.cleaned,
-        password: hashedPassword,
         role: UserRole.STUDENT,
+        passwordHash: hashedPassword,
       },
     });
 
