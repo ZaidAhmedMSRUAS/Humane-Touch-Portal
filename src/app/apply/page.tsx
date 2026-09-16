@@ -12,6 +12,9 @@ interface FormData {
   householdCategory: string;
   residentialAddress: string;
   personalStatement: string;
+  // Compulsory Document Uploads (*)
+  sslcMarksCardUrl: string;
+  pucMarksCardUrl: string;
   marksCardUrl: string;
   incomeCertUrl: string;
   feeDemandUrl: string;
@@ -30,6 +33,8 @@ export default function ApplyPage() {
     householdCategory: '',
     residentialAddress: '',
     personalStatement: '',
+    sslcMarksCardUrl: '',
+    pucMarksCardUrl: '',
     marksCardUrl: '',
     incomeCertUrl: '',
     feeDemandUrl: '',
@@ -77,21 +82,31 @@ export default function ApplyPage() {
     }
   };
 
-  // Comprehensive Form Check
+  const getMissingDocuments = (): string[] => {
+    const missing: string[] = [];
+    if (!formData.sslcMarksCardUrl) missing.push('SSLC (10th) Marks Card (*)');
+    if (!formData.pucMarksCardUrl) missing.push('PUC / 12th Marks Card (*)');
+    if (!formData.marksCardUrl) missing.push('Previous Year / Semester Marks Card (*)');
+    if (!formData.incomeCertUrl) missing.push('Income Certificate / Salary Slip (*)');
+    if (!formData.feeDemandUrl) missing.push('College Fee Demand Note (*)');
+    if (!formData.idProofUrl) missing.push('Student Aadhar Card / ID Proof (*)');
+    return missing;
+  };
+
   const validateForm = (): string[] => {
     const errors: string[] = [];
 
-    // Check Marks <= 100
+    // Academic Marks Check (0 - 100%)
     const marks = Number(formData.previousScoreMarks);
     if (!formData.previousScoreMarks || isNaN(marks)) {
-      errors.push('Previous Academic Marks is required (*)');
+      errors.push('Previous Academic Marks (%) is required (*)');
     } else if (marks > 100) {
       errors.push(`Previous Academic Marks cannot be greater than 100%. (Current: ${marks}%)`);
     } else if (marks < 0) {
       errors.push('Previous Academic Marks cannot be negative.');
     }
 
-    // Check required fields
+    // Required Text Fields
     if (!formData.collegeName.trim()) errors.push('College Name is required (*)');
     if (!formData.courseName.trim()) errors.push('Degree / Course Name is required (*)');
     if (!formData.currentYearOfStudy.trim()) errors.push('Current Year of Study is required (*)');
@@ -99,14 +114,17 @@ export default function ApplyPage() {
     if (!formData.residentialAddress.trim()) errors.push('Residential Address is required (*)');
     if (!formData.personalStatement.trim()) errors.push('Personal Statement is required (*)');
 
-    // Check 4 mandatory documents
-    if (!formData.marksCardUrl) errors.push('Previous Year Marks Card (*) must be uploaded');
-    if (!formData.incomeCertUrl) errors.push('Income Certificate / Salary Slip (*) must be uploaded');
-    if (!formData.feeDemandUrl) errors.push('College Fee Demand Note (*) must be uploaded');
-    if (!formData.idProofUrl) errors.push('Student ID / Aadhar Proof (*) must be uploaded');
+    // Compulsory Documents Check
+    const missingDocs = getMissingDocuments();
+    errors.push(...missingDocs.map((d) => `Mandatory Document Missing: ${d}`));
 
     return errors;
   };
+
+  const missingDocs = getMissingDocuments();
+  const allDocsUploaded = missingDocs.length === 0;
+  const marks = Number(formData.previousScoreMarks);
+  const isMarksInvalid = marks > 100;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,7 +134,11 @@ export default function ApplyPage() {
     if (errors.length > 0) {
       setValidationWarnings(errors);
       alert(`⚠️ SUBMISSION BLOCKED:\n\n• ${errors.join('\n• ')}`);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (missingDocs.length > 0) {
+        document.getElementById('mandatory-documents-section')?.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
       return;
     }
 
@@ -132,12 +154,13 @@ export default function ApplyPage() {
 
       const data = await res.json();
       if (res.ok && data.success) {
-        alert(`Application submitted successfully! Reference Number: ${data.referenceNumber}`);
+        alert(`Application registered successfully! Reference Number: ${data.referenceNumber}`);
         router.push('/student/dashboard');
       } else {
         setServerError(data.error || 'Failed to submit application.');
         if (data.missingDocuments) {
           setValidationWarnings(data.missingDocuments);
+          document.getElementById('mandatory-documents-section')?.scrollIntoView({ behavior: 'smooth' });
         }
       }
     } catch (err: any) {
@@ -146,9 +169,6 @@ export default function ApplyPage() {
       setSubmitting(false);
     }
   };
-
-  const marks = Number(formData.previousScoreMarks);
-  const isMarksInvalid = marks > 100;
 
   return (
     <div className="min-h-screen bg-slate-100/60 py-8">
@@ -159,19 +179,19 @@ export default function ApplyPage() {
           <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 bg-amber-400/10 px-2.5 py-1 rounded-md">
             Udaan Scholarship Portal
           </span>
-          <h1 className="text-2xl font-black mt-2">Scholarship Application Form</h1>
+          <h1 className="text-2xl font-black mt-2">Scholarship Application & Document Dossier</h1>
           <p className="text-xs text-slate-300 mt-1">
-            Fill out all required fields. Marks must be between 0% and 100%. All 4 document uploads marked with (<span className="text-rose-400 font-bold">*</span>) are mandatory.
+            All fields and uploads marked with (<span className="text-rose-400 font-bold">*</span>) are strictly compulsory, including both <strong className="text-amber-400">SSLC (10th)</strong> and <strong className="text-amber-400">PUC (12th)</strong> marks cards.
           </p>
         </div>
 
-        {/* Validation Warning Alert */}
+        {/* Validation Warnings Alert */}
         {validationWarnings.length > 0 && (
           <div className="p-5 bg-rose-50 border-2 border-rose-400 rounded-3xl shadow-sm text-rose-900 space-y-2">
             <div className="flex items-center gap-2">
               <span className="text-xl">⚠️</span>
               <h3 className="text-sm font-black tracking-wide">
-                Submission Blocked: Please resolve the following {validationWarnings.length} requirement(s):
+                Submission Blocked: {validationWarnings.length} requirement(s) missing or invalid
               </h3>
             </div>
             <ul className="list-disc list-inside space-y-1 text-xs font-bold pl-2 text-rose-800">
@@ -244,7 +264,6 @@ export default function ApplyPage() {
                 </select>
               </div>
 
-              {/* Marks input with <= 100 max constraint */}
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <label className="block font-bold text-slate-700">
@@ -269,16 +288,11 @@ export default function ApplyPage() {
                       : 'bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-amber-500'
                   }`}
                 />
-                {isMarksInvalid && (
-                  <p className="text-[10px] text-rose-600 font-bold mt-1">
-                    ⚠️ Marks cannot exceed 100%. Please enter a percentage between 0 and 100.
-                  </p>
-                )}
               </div>
             </div>
           </div>
 
-          {/* Section 2: Address & Need Statement */}
+          {/* Section 2: Address & Need */}
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
             <h2 className="text-xs font-black uppercase tracking-wider text-slate-800 border-b border-slate-100 pb-2">
               2. Residential Address & Need Statement
@@ -315,7 +329,7 @@ export default function ApplyPage() {
             </div>
           </div>
 
-          {/* Section 3: Financial Demographics */}
+          {/* Section 3: Financials */}
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
             <h2 className="text-xs font-black uppercase tracking-wider text-slate-800 border-b border-slate-100 pb-2">
               3. Financial Demographics & Fee Structure
@@ -377,16 +391,18 @@ export default function ApplyPage() {
           >
             <div className="border-b border-slate-100 pb-2">
               <h2 className="text-xs font-black uppercase tracking-wider text-slate-900">
-                4. Mandatory Document Dossier Uploads
+                4. Mandatory Document Dossier Uploads (All Compulsory)
               </h2>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                All 4 documents below are strictly mandatory (<span className="text-rose-500 font-bold">*</span>). Max 10 MB each.
+                Every document below is strictly required (<span className="text-rose-500 font-bold">*</span>). Max 10 MB per file (PDF, JPG, PNG).
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
-                { key: 'marksCardUrl', label: 'Previous Year Marks Card / Grade Sheet *' },
+                { key: 'sslcMarksCardUrl', label: 'SSLC (10th) Marks Card *' },
+                { key: 'pucMarksCardUrl', label: 'PUC / 12th Marks Card *' },
+                { key: 'marksCardUrl', label: 'Previous Year / Semester Marks Card *' },
                 { key: 'incomeCertUrl', label: 'Income Certificate / Salary Slip *' },
                 { key: 'feeDemandUrl', label: 'College Fee Demand Note / Structure *' },
                 { key: 'idProofUrl', label: 'Student Aadhar Card / Govt ID Proof *' },
@@ -433,17 +449,25 @@ export default function ApplyPage() {
             <div>
               <h4 className="text-xs font-black uppercase tracking-wider text-amber-400">Submission Desk</h4>
               <p className="text-[11px] text-slate-300">
-                {isMarksInvalid
-                  ? '⚠️ Marks exceed 100%. Please fix academic marks before submitting.'
-                  : 'All mandatory fields and 4 document uploads must be completed.'}
+                {!allDocsUploaded
+                  ? `⚠️ ${missingDocs.length} mandatory document(s) remaining (including SSLC/PUC).`
+                  : '✓ All mandatory documents attached. Ready to submit.'}
               </p>
             </div>
             <button
               type="submit"
-              disabled={submitting || uploadingDoc !== null || isMarksInvalid}
-              className="w-full sm:w-auto px-8 py-3.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-2xl shadow transition cursor-pointer disabled:opacity-50"
+              disabled={submitting || uploadingDoc !== null || !allDocsUploaded || isMarksInvalid}
+              className={`w-full sm:w-auto px-8 py-3.5 font-black text-xs rounded-2xl shadow transition cursor-pointer ${
+                allDocsUploaded && !isMarksInvalid
+                  ? 'bg-amber-500 hover:bg-amber-600 text-slate-950'
+                  : 'bg-rose-600/70 text-white cursor-not-allowed'
+              }`}
             >
-              {submitting ? 'Verifying & Registering...' : 'Submit Application Dossier'}
+              {submitting
+                ? 'Registering Dossier...'
+                : allDocsUploaded
+                ? 'Submit Application Dossier'
+                : 'Upload SSLC, PUC & Documents to Submit'}
             </button>
           </div>
 

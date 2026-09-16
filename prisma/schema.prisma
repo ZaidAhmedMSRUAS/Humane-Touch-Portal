@@ -77,6 +77,8 @@ model Application {
   householdCategory          String
   residentialAddress         String
   personalStatement          String
+  sslcMarksCardUrl      String?
+  pucMarksCardUrl       String?
   status                     ApplicationStatus     @default(SUBMITTED)
   
   docStudentAadhaar          String?

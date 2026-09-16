@@ -16,12 +16,14 @@ export async function POST(req: Request) {
     const userId = (session.user as any).id;
     const body = await req.json();
 
-    // 1. Mandatory Document Gating
     const missingDocs: string[] = [];
     const isValidDoc = (val: any) =>
       val && typeof val === 'string' && val.trim() !== '' && val.trim() !== 'null' && val.trim() !== 'undefined';
 
-    if (!isValidDoc(body.marksCardUrl)) missingDocs.push('Previous Year Marks Card / Grade Sheet (*)');
+    // 1. Mandatory Document Gating (Includes Compulsory SSLC & PUC Marks Cards)
+    if (!isValidDoc(body.sslcMarksCardUrl)) missingDocs.push('SSLC (10th) Marks Card (*)');
+    if (!isValidDoc(body.pucMarksCardUrl)) missingDocs.push('PUC / 12th Marks Card (*)');
+    if (!isValidDoc(body.marksCardUrl)) missingDocs.push('Previous Year / Semester Marks Card (*)');
     if (!isValidDoc(body.incomeCertUrl)) missingDocs.push('Income Certificate / Salary Slip (*)');
     if (!isValidDoc(body.feeDemandUrl)) missingDocs.push('College Fee Demand Note (*)');
     if (!isValidDoc(body.idProofUrl)) missingDocs.push('Student Aadhar Card / ID Proof (*)');
@@ -29,36 +31,31 @@ export async function POST(req: Request) {
     if (missingDocs.length > 0) {
       return NextResponse.json(
         {
-          error: `SUBMISSION REJECTED: All 4 mandatory documents marked with (*) must be uploaded before registration.`,
+          error: `SUBMISSION REJECTED: Mandatory documents missing. You must upload: ${missingDocs.join(', ')}`,
           missingDocuments: missingDocs,
         },
         { status: 400 }
       );
     }
 
-    // 2. Strict Academic Marks Constraint (Cannot exceed 100)
+    // 2. Strict Academic Marks Constraint (0 to 100%)
     const marksNum = Number(body.previousScoreMarks);
-    if (isNaN(marksNum)) {
+    if (isNaN(marksNum) || marksNum < 0 || marksNum > 100) {
       return NextResponse.json(
-        { error: 'Previous Academic Marks must be a valid number.' },
-        { status: 400 }
-      );
-    }
-    if (marksNum > 100) {
-      return NextResponse.json(
-        { error: `Previous Academic Marks cannot be greater than 100%. You entered: ${marksNum}%.` },
-        { status: 400 }
-      );
-    }
-    if (marksNum < 0) {
-      return NextResponse.json(
-        { error: 'Previous Academic Marks cannot be negative.' },
+        { error: 'Previous Academic Marks must be between 0% and 100%.' },
         { status: 400 }
       );
     }
 
-    // 3. Validate Academic Fields
-    if (!body.collegeName || !body.courseName || !body.currentYearOfStudy || !body.householdCategory) {
+    // 3. Required Academic & Demographic Questions
+    if (
+      !body.collegeName ||
+      !body.courseName ||
+      !body.currentYearOfStudy ||
+      !body.householdCategory ||
+      !body.residentialAddress ||
+      !body.personalStatement
+    ) {
       return NextResponse.json(
         { error: 'All mandatory fields marked with (*) are required.' },
         { status: 400 }
@@ -81,6 +78,8 @@ export async function POST(req: Request) {
         annualTuitionFee: sanitizeAmount(body.annualTuitionFee),
         householdCategory: sanitizeText(body.householdCategory),
         status: ApplicationStatus.SUBMITTED,
+        sslcMarksCardUrl: body.sslcMarksCardUrl.trim(),
+        pucMarksCardUrl: body.pucMarksCardUrl.trim(),
       },
     });
 

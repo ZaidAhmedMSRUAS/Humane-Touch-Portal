@@ -68,7 +68,7 @@ export default function VolunteerVerificationModal({ app, onClose, onSuccess }: 
             </h3>
             <p className="text-xs font-mono font-bold text-amber-800">{app.referenceNumber}</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 font-bold text-slate-600 cursor-pointer">✕</button>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 font-bold text-slate-600 cursor-pointer">âœ•</button>
         </div>
 
         {error && (
@@ -93,7 +93,7 @@ export default function VolunteerVerificationModal({ app, onClose, onSuccess }: 
           </div>
           <div>
             <span className="text-slate-400 text-[10px] block">Annual Tuition Fee</span>
-            <span className="font-mono font-bold text-emerald-800">₹{app.annualTuitionFee?.toLocaleString('en-IN')}</span>
+            <span className="font-mono font-bold text-emerald-800">â‚¹{app.annualTuitionFee?.toLocaleString('en-IN')}</span>
           </div>
         </div>
 
@@ -162,12 +162,87 @@ export default function VolunteerVerificationModal({ app, onClose, onSuccess }: 
               disabled={submitting}
               className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl shadow transition cursor-pointer disabled:opacity-50"
             >
-              {submitting ? 'Saving...' : '✓ Complete Verification & Save Comments'}
+              {submitting ? 'Saving...' : 'âœ“ Complete Verification & Save Comments'}
             </button>
           </div>
         </form>
 
       </div>
     </div>
+
+        {/* Uploaded Documents Scrutiny Grid */}
+        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 text-xs">
+          <h4 className="font-black text-slate-900 uppercase tracking-wider text-[11px]">
+            Uploaded Scrutiny Documents:
+          </h4>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {app.sslcMarksCardUrl && (
+              <a
+                href={app.sslcMarksCardUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="p-2.5 bg-white rounded-xl border border-amber-300 font-bold text-amber-900 hover:bg-amber-50 flex items-center justify-between"
+              >
+                <span>📜 SSLC Marks Card</span>
+                <span>↗</span>
+              </a>
+            )}
+            {app.pucMarksCardUrl && (
+              <a
+                href={app.pucMarksCardUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="p-2.5 bg-white rounded-xl border border-amber-300 font-bold text-amber-900 hover:bg-amber-50 flex items-center justify-between"
+              >
+                <span>📜 PUC Marks Card</span>
+                <span>↗</span>
+              </a>
+            )}
+            {app.marksCardUrl && (
+              <a
+                href={app.marksCardUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="p-2.5 bg-white rounded-xl border border-slate-200 font-bold text-slate-800 hover:bg-slate-100 flex items-center justify-between"
+              >
+                <span>📄 Previous Marks</span>
+                <span>↗</span>
+              </a>
+            )}
+            {app.incomeCertUrl && (
+              <a
+                href={app.incomeCertUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="p-2.5 bg-white rounded-xl border border-slate-200 font-bold text-slate-800 hover:bg-slate-100 flex items-center justify-between"
+              >
+                <span>💰 Income Certificate</span>
+                <span>↗</span>
+              </a>
+            )}
+            {app.feeDemandUrl && (
+              <a
+                href={app.feeDemandUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="p-2.5 bg-white rounded-xl border border-slate-200 font-bold text-slate-800 hover:bg-slate-100 flex items-center justify-between"
+              >
+                <span>🧾 Fee Demand Note</span>
+                <span>↗</span>
+              </a>
+            )}
+            {app.idProofUrl && (
+              <a
+                href={app.idProofUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="p-2.5 bg-white rounded-xl border border-slate-200 font-bold text-slate-800 hover:bg-slate-100 flex items-center justify-between"
+              >
+                <span>🪪 ID / Aadhar Proof</span>
+                <span>↗</span>
+              </a>
+            )}
+          </div>
+        </div>
   );
 }
