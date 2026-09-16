@@ -1,5 +1,5 @@
-import { CertificateTemplate } from "@/components/documents/CertificateModal";
-import { AwardLetterTemplate } from "@/components/documents/AwardLetterModal";
+import CertificateModal from "@/components/documents/CertificateModal";
+import AwardLetterTemplate from "@/components/documents/AwardLetterModal";
 
 export default function AdminDocumentView({ application }: { application: any }) {
   const certificateData = {
@@ -39,7 +39,7 @@ export default function AdminDocumentView({ application }: { application: any })
     <div className="space-y-12 py-6">
       <section>
         <h3 className="text-lg font-bold text-slate-900 px-6 print:hidden">Scholarship Certificate</h3>
-        <CertificateTemplate data={certificateData} />
+        <CertificateModal data={certificateData} />
       </section>
 
       <section>
