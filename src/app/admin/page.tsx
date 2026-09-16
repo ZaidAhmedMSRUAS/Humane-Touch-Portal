@@ -4,6 +4,7 @@ import Link from 'next/link';
 import PendingDeletionsAdminPanel from '@/components/admin/PendingDeletionsAdminPanel';
 import CertificateModal from '@/components/documents/CertificateModal';
 import AwardLetterModal from '@/components/documents/AwardLetterModal';
+import EditApplicationModal from '@/components/admin/EditApplicationModal';
 import { getDesignation } from '@/lib/designations';
 
 export default function AdminDashboardPage() {
@@ -15,6 +16,7 @@ export default function AdminDashboardPage() {
 
   // Modals state
   const [infoModalApp, setInfoModalApp] = useState<any | null>(null);
+  const [editModalApp, setEditModalApp] = useState<any | null>(null);
   const [certificateModalApp, setCertificateModalApp] = useState<any | null>(null);
   const [awardLetterModalApp, setAwardLetterModalApp] = useState<any | null>(null);
 
@@ -83,6 +85,7 @@ export default function AdminDashboardPage() {
           chequeNumber: chequeNumberInput,
           chequeInFavourOf: chequePayeeInput,
           sanctionedAmount: Number(sanctionedAmountInput) || chequeModalApp.annualTuitionFee,
+          status: 'APPROVED',
         }),
       });
       const data = await res.json();
@@ -141,7 +144,7 @@ export default function AdminDashboardPage() {
           </span>
           <h1 className="text-2xl font-black mt-2">Admin Management Dashboard</h1>
           <p className="text-xs text-slate-300 mt-1">
-            Supervise disbursements, assign volunteers, and issue documents for Trustee-approved scholars
+            Supervise disbursements, edit student application dossiers, assign volunteers, and issue documents
           </p>
         </div>
         <div className="flex gap-2">
@@ -191,7 +194,7 @@ export default function AdminDashboardPage() {
       {/* Applications & Documents List */}
       {activeTab === 'applications' && (
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
-          <h3 className="text-base font-black text-slate-900 mb-4">Scholarship Applications, Disbursals & Document Issuance</h3>
+          <h3 className="text-base font-black text-slate-900 mb-4">Scholarship Applications, Editing & Disbursals</h3>
           {loading ? (
             <p className="text-xs text-slate-400 py-8 text-center">Loading applications...</p>
           ) : applications.length === 0 ? (
@@ -207,7 +210,7 @@ export default function AdminDashboardPage() {
                     <th className="py-3 px-3">Volunteer</th>
                     <th className="py-3 px-3">Cheque Details</th>
                     <th className="py-3 px-3">Status</th>
-                    <th className="py-3 px-3 text-right">Official Actions</th>
+                    <th className="py-3 px-3 text-right">Admin Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -266,6 +269,14 @@ export default function AdminDashboardPage() {
                               ℹ️ Info
                             </button>
 
+                            {/* ✏️ EDIT APPLICATION BUTTON */}
+                            <button
+                              onClick={() => setEditModalApp(app)}
+                              className="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-lg text-[11px] shadow-sm transition cursor-pointer flex items-center gap-1"
+                            >
+                              ✏️ Edit
+                            </button>
+
                             {/* Cheque Disbursal */}
                             <button
                               onClick={() => {
@@ -279,7 +290,7 @@ export default function AdminDashboardPage() {
                               💳 Cheque
                             </button>
 
-                            {/* GATED DOCUMENTS: Only accessible after Trustee Approval */}
+                            {/* GATED DOCUMENTS: Accessible after Trustee Approval */}
                             {isApproved ? (
                               <>
                                 <button
@@ -358,7 +369,16 @@ export default function AdminDashboardPage() {
       {/* Pending Deletions */}
       {activeTab === 'deletions' && <PendingDeletionsAdminPanel />}
 
-      {/* DOSSIER MODAL */}
+      {/* 1. EDIT APPLICATION MODAL */}
+      {editModalApp && (
+        <EditApplicationModal
+          app={editModalApp}
+          onClose={() => setEditModalApp(null)}
+          onSuccess={() => fetchAdminData()}
+        />
+      )}
+
+      {/* 2. DOSSIER MODAL */}
       {infoModalApp && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 my-8">
@@ -395,6 +415,15 @@ export default function AdminDashboardPage() {
 
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
               <button
+                onClick={() => {
+                  setEditModalApp(infoModalApp);
+                  setInfoModalApp(null);
+                }}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs cursor-pointer"
+              >
+                ✏️ Edit Details
+              </button>
+              <button
                 onClick={() => setInfoModalApp(null)}
                 className="px-4 py-2 bg-slate-100 font-bold rounded-xl text-slate-700 text-xs cursor-pointer"
               >
@@ -405,7 +434,7 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* CHEQUE MODAL */}
+      {/* 3. CHEQUE MODAL */}
       {chequeModalApp && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
@@ -471,7 +500,7 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* PASSWORD RESET MODAL */}
+      {/* 4. PASSWORD RESET MODAL */}
       {passwordResetUser && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
@@ -515,7 +544,7 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* DOCUMENT MODALS */}
+      {/* 5. DOCUMENT MODALS */}
       {certificateModalApp && (
         <CertificateModal
           app={certificateModalApp}
