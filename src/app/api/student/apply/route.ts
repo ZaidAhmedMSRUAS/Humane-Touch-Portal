@@ -18,43 +18,26 @@ export async function POST(req: Request) {
 
     const missingDocs: string[] = [];
 
-    // STRICT CHECK: Reject if any mandatory document URL is empty, missing, or undefined
-    if (!body.marksCardUrl || String(body.marksCardUrl).trim() === '' || body.marksCardUrl === 'null') {
-      missingDocs.push('Previous Year Marks Card / Grade Sheet (*)');
-    }
-    if (!body.incomeCertUrl || String(body.incomeCertUrl).trim() === '') {
-      missingDocs.push('Income Certificate / Salary Slip (*)');
-    }
-    if (!body.feeDemandUrl || String(body.feeDemandUrl).trim() === '') {
-      missingDocs.push('College Fee Demand Note (*)');
-    }
-    if (!body.idProofUrl || String(body.idProofUrl).trim() === '') {
-      missingDocs.push('Student Aadhar Card / ID Proof (*)');
-    }
+    // HARD GUARD: Verify all 4 required files exist and are not empty
+    const checkDoc = (val: any) => val && String(val).trim() !== '' && String(val).trim() !== 'null' && String(val).trim() !== 'undefined';
+
+    if (!checkDoc(body.marksCardUrl)) missingDocs.push('Previous Year Marks Card / Grade Sheet (*)');
+    if (!checkDoc(body.incomeCertUrl)) missingDocs.push('Income Certificate / Salary Slip (*)');
+    if (!checkDoc(body.feeDemandUrl)) missingDocs.push('College Fee Demand Note (*)');
+    if (!checkDoc(body.idProofUrl)) missingDocs.push('Student Aadhar Card / ID Proof (*)');
 
     if (missingDocs.length > 0) {
       return NextResponse.json(
         {
-          error: `SUBMISSION REJECTED: Application cannot be registered without mandatory documents.`,
+          error: `SUBMISSION REJECTED: All 4 mandatory documents marked with (*) must be uploaded. Missing: ${missingDocs.join(', ')}`,
           missingDocuments: missingDocs,
         },
         { status: 400 }
       );
     }
 
-    // Validate Academic Information
-    if (
-      !body.collegeName ||
-      !body.courseName ||
-      !body.currentYearOfStudy ||
-      !body.householdCategory ||
-      !body.residentialAddress ||
-      !body.personalStatement
-    ) {
-      return NextResponse.json(
-        { error: 'All mandatory academic and personal statement fields marked with (*) are required.' },
-        { status: 400 }
-      );
+    if (!body.collegeName || !body.courseName || !body.currentYearOfStudy || !body.householdCategory) {
+      return NextResponse.json({ error: 'All asterisk (*) questions must be filled.' }, { status: 400 });
     }
 
     const refNumber = await generateApplicationRefNumber(body.courseName);
@@ -80,7 +63,7 @@ export async function POST(req: Request) {
       success: true,
       referenceNumber: refNumber,
       applicationId: application.id,
-      message: 'Application and mandatory documents successfully registered.',
+      message: 'Application registered successfully.',
     });
   } catch (error: any) {
     console.error('Student Application Submission Error:', error);
