@@ -1,60 +1,87 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { validateAndCleanPhone, validateEmail, sanitizeText } from '@/lib/validation';
+import { UserRole } from '@prisma/client';
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { fullName, phone, email, password } = body;
 
-    if (!fullName || !phone || !password) {
+    // 1. Full Name Validation
+    const cleanedName = sanitizeText(fullName, 100);
+    if (!cleanedName || cleanedName.length < 3) {
       return NextResponse.json(
-        { error: 'Full name, phone number, and password are required.' },
+        { error: 'Full Name must be at least 3 characters long.' },
         { status: 400 }
       );
     }
 
-    // Check if phone or email already registered
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { phone: phone.trim() },
-          ...(email ? [{ email: email.trim() }] : []),
-        ],
-      },
-    });
+    // 2. Mobile Number Validation
+    const phoneCheck = validateAndCleanPhone(phone);
+    if (!phoneCheck.isValid) {
+      return NextResponse.json({ error: phoneCheck.error }, { status: 400 });
+    }
 
-    if (existingUser) {
+    // 3. Email Validation
+    const emailCheck = validateEmail(email);
+    if (!emailCheck.isValid) {
+      return NextResponse.json({ error: emailCheck.error }, { status: 400 });
+    }
+
+    // 4. Password Validation
+    if (!password || typeof password !== 'string' || password.length < 6) {
       return NextResponse.json(
-        { error: 'An account with this phone number or email already exists.' },
+        { error: 'Password must be at least 6 characters long.' },
+        { status: 400 }
+      );
+    }
+
+    // 5. Check Duplicate Phone
+    const existingPhone = await prisma.user.findFirst({
+      where: { phone: phoneCheck.cleaned },
+    });
+    if (existingPhone) {
+      return NextResponse.json(
+        { error: `Mobile number ${phoneCheck.cleaned} is already registered. Please log in instead.` },
         { status: 409 }
       );
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    // 6. Check Duplicate Email
+    const existingEmail = await prisma.user.findFirst({
+      where: { email: emailCheck.cleaned },
+    });
+    if (existingEmail) {
+      return NextResponse.json(
+        { error: `Email address ${emailCheck.cleaned} is already registered. Please log in instead.` },
+        { status: 409 }
+      );
+    }
 
-    const newUser = await prisma.user.create({
+    // 7. Hash Password & Create Student
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await prisma.user.create({
       data: {
-        fullName: fullName.trim(),
-        phone: phone.trim(),
-        email: email?.trim() || `${phone.trim()}@student.humanetouch.org`,
-        passwordHash,
-        role: 'STUDENT',
-        isActive: true,
+        fullName: cleanedName,
+        phone: phoneCheck.cleaned,
+        email: emailCheck.cleaned,
+        password: hashedPassword,
+        role: UserRole.STUDENT,
       },
     });
 
-    return NextResponse.json(
-      {
-        success: true,
-        user: { id: newUser.id, fullName: newUser.fullName, phone: newUser.phone },
-      },
-      { status: 201 }
-    );
+    return NextResponse.json({
+      success: true,
+      message: 'Student account registered successfully! You may now log in.',
+      userId: user.id,
+    });
   } catch (error: any) {
-    console.error('Registration API Error:', error);
+    console.error('Registration error:', error);
     return NextResponse.json(
-      { error: 'Internal server error while creating account.' },
+      { error: error.message || 'Registration failed. Please try again.' },
       { status: 500 }
     );
   }

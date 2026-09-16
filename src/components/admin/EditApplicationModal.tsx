@@ -26,8 +26,16 @@ export default function EditApplicationModal({ app, onClose, onSuccess }: Props)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
     setError(null);
+
+    // Enforce marks <= 100
+    const marks = Number(formData.previousScoreMarks);
+    if (isNaN(marks) || marks < 0 || marks > 100) {
+      setError(`Previous Academic Marks must be between 0% and 100%. (Current: ${formData.previousScoreMarks}%)`);
+      return;
+    }
+
+    setSubmitting(true);
 
     try {
       const res = await fetch('/api/admin/actions', {
@@ -37,6 +45,7 @@ export default function EditApplicationModal({ app, onClose, onSuccess }: Props)
           action: 'UPDATE_APPLICATION',
           applicationId: app.id,
           ...formData,
+          previousScoreMarks: marks,
         }),
       });
 
@@ -59,7 +68,6 @@ export default function EditApplicationModal({ app, onClose, onSuccess }: Props)
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl space-y-5 my-8">
         
-        {/* Header */}
         <div className="flex justify-between items-center pb-3 border-b border-slate-100">
           <div>
             <span className="text-[10px] font-black uppercase tracking-widest text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded border border-amber-200">
@@ -85,7 +93,6 @@ export default function EditApplicationModal({ app, onClose, onSuccess }: Props)
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-          {/* Row 1: Course & College */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block font-bold text-slate-700 mb-1">Degree / Course Name *</label>
@@ -109,7 +116,6 @@ export default function EditApplicationModal({ app, onClose, onSuccess }: Props)
             </div>
           </div>
 
-          {/* Row 2: Year & Marks */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block font-bold text-slate-700 mb-1">Current Year of Study *</label>
@@ -126,7 +132,7 @@ export default function EditApplicationModal({ app, onClose, onSuccess }: Props)
               </select>
             </div>
             <div>
-              <label className="block font-bold text-slate-700 mb-1">Previous Academic Marks (%) *</label>
+              <label className="block font-bold text-slate-700 mb-1">Previous Academic Marks (%) [Max 100] *</label>
               <input
                 type="number"
                 step="0.01"
@@ -140,7 +146,6 @@ export default function EditApplicationModal({ app, onClose, onSuccess }: Props)
             </div>
           </div>
 
-          {/* Row 3: Income, Tuition Fee & Category */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block font-bold text-slate-700 mb-1">Family Annual Income (₹) *</label>
@@ -177,7 +182,6 @@ export default function EditApplicationModal({ app, onClose, onSuccess }: Props)
             </div>
           </div>
 
-          {/* Cheque In Favour Of */}
           <div>
             <label className="block font-bold text-slate-700 mb-1">Cheque In Favour Of (Payee)</label>
             <input
@@ -189,7 +193,6 @@ export default function EditApplicationModal({ app, onClose, onSuccess }: Props)
             />
           </div>
 
-          {/* Residential Address */}
           <div>
             <label className="block font-bold text-slate-700 mb-1">Residential Address</label>
             <textarea
@@ -200,7 +203,6 @@ export default function EditApplicationModal({ app, onClose, onSuccess }: Props)
             />
           </div>
 
-          {/* Personal Statement */}
           <div>
             <label className="block font-bold text-slate-700 mb-1">Personal Statement</label>
             <textarea
@@ -211,7 +213,6 @@ export default function EditApplicationModal({ app, onClose, onSuccess }: Props)
             />
           </div>
 
-          {/* Actions */}
           <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
             <button
               type="button"
