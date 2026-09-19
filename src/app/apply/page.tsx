@@ -133,7 +133,7 @@ export default function ApplyPage() {
     const errors = validateForm();
     if (errors.length > 0) {
       setValidationWarnings(errors);
-      alert(`⚠️ SUBMISSION BLOCKED:\n\n• ${errors.join('\n• ')}`);
+      alert(`âš ï¸ SUBMISSION BLOCKED:\n\nâ€¢ ${errors.join('\nâ€¢ ')}`);
       if (missingDocs.length > 0) {
         document.getElementById('mandatory-documents-section')?.scrollIntoView({ behavior: 'smooth' });
       } else {
@@ -189,7 +189,7 @@ export default function ApplyPage() {
         {validationWarnings.length > 0 && (
           <div className="p-5 bg-rose-50 border-2 border-rose-400 rounded-3xl shadow-sm text-rose-900 space-y-2">
             <div className="flex items-center gap-2">
-              <span className="text-xl">⚠️</span>
+              <span className="text-xl">âš ï¸</span>
               <h3 className="text-sm font-black tracking-wide">
                 Submission Blocked: {validationWarnings.length} requirement(s) missing or invalid
               </h3>
@@ -204,7 +204,7 @@ export default function ApplyPage() {
 
         {serverError && (
           <div className="p-4 bg-rose-100 border border-rose-300 rounded-2xl text-xs font-bold text-rose-900">
-            ❌ {serverError}
+            âŒ {serverError}
           </div>
         )}
 
@@ -338,7 +338,7 @@ export default function ApplyPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
-                  Family Annual Income (₹) <span className="text-rose-500 font-black">*</span>
+                  Family Annual Income (â‚¹) <span className="text-rose-500 font-black">*</span>
                 </label>
                 <input
                   type="number"
@@ -352,7 +352,7 @@ export default function ApplyPage() {
 
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
-                  Annual College Tuition Fee (₹) <span className="text-rose-500 font-black">*</span>
+                  Annual College Tuition Fee (â‚¹) <span className="text-rose-500 font-black">*</span>
                 </label>
                 <input
                   type="number"
@@ -419,7 +419,7 @@ export default function ApplyPage() {
                       <span className="text-xs font-bold text-slate-900">{doc.label}</span>
                       {isUploaded ? (
                         <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-md border border-emerald-300">
-                          ✓ Attached
+                          âœ“ Attached
                         </span>
                       ) : (
                         <span className="text-[10px] font-black text-rose-700 bg-rose-100 px-2.5 py-0.5 rounded-md border border-rose-300">
@@ -450,8 +450,8 @@ export default function ApplyPage() {
               <h4 className="text-xs font-black uppercase tracking-wider text-amber-400">Submission Desk</h4>
               <p className="text-[11px] text-slate-300">
                 {!allDocsUploaded
-                  ? `⚠️ ${missingDocs.length} mandatory document(s) remaining (including SSLC/PUC).`
-                  : '✓ All mandatory documents attached. Ready to submit.'}
+                  ? `âš ï¸ ${missingDocs.length} mandatory document(s) remaining (including SSLC/PUC).`
+                  : 'âœ“ All mandatory documents attached. Ready to submit.'}
               </p>
             </div>
             <button
