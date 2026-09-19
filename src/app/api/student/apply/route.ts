@@ -20,10 +20,10 @@ export async function POST(req: Request) {
     const isValidDoc = (val: any) =>
       val && typeof val === 'string' && val.trim() !== '' && val.trim() !== 'null' && val.trim() !== 'undefined';
 
-    // 1. Mandatory Document Gating (Includes Compulsory SSLC & PUC Marks Cards)
+    // 1. Mandatory Document Gating (Includes Compulsory SSLC & PUC)
     if (!isValidDoc(body.sslcMarksCardUrl)) missingDocs.push('SSLC (10th) Marks Card (*)');
     if (!isValidDoc(body.pucMarksCardUrl)) missingDocs.push('PUC / 12th Marks Card (*)');
-    if (!isValidDoc(body.marksCardUrl)) missingDocs.push('Previous Year / Semester Marks Card (*)');
+    if (!isValidDoc(body.marksCardUrl)) missingDocs.push('Previous Year Marks Card (*)');
     if (!isValidDoc(body.incomeCertUrl)) missingDocs.push('Income Certificate / Salary Slip (*)');
     if (!isValidDoc(body.feeDemandUrl)) missingDocs.push('College Fee Demand Note (*)');
     if (!isValidDoc(body.idProofUrl)) missingDocs.push('Student Aadhar Card / ID Proof (*)');
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     if (missingDocs.length > 0) {
       return NextResponse.json(
         {
-          error: `SUBMISSION REJECTED: Mandatory documents missing. You must upload: ${missingDocs.join(', ')}`,
+          error: `Submission rejected: All required documents must be uploaded. Missing: ${missingDocs.join(', ')}`,
           missingDocuments: missingDocs,
         },
         { status: 400 }
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3. Required Academic & Demographic Questions
+    // 3. Validate Academic Fields
     if (
       !body.collegeName ||
       !body.courseName ||
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
       !body.personalStatement
     ) {
       return NextResponse.json(
-        { error: 'All mandatory fields marked with (*) are required.' },
+        { error: 'All mandatory questions marked with (*) are required.' },
         { status: 400 }
       );
     }
@@ -77,9 +77,9 @@ export async function POST(req: Request) {
         familyAnnualIncome: sanitizeAmount(body.familyAnnualIncome),
         annualTuitionFee: sanitizeAmount(body.annualTuitionFee),
         householdCategory: sanitizeText(body.householdCategory),
-        status: ApplicationStatus.SUBMITTED,
         sslcMarksCardUrl: body.sslcMarksCardUrl.trim(),
         pucMarksCardUrl: body.pucMarksCardUrl.trim(),
+        status: ApplicationStatus.SUBMITTED,
       },
     });
 
@@ -87,7 +87,7 @@ export async function POST(req: Request) {
       success: true,
       referenceNumber: refNumber,
       applicationId: application.id,
-      message: 'Application registered successfully.',
+      message: 'Application and document dossier registered successfully.',
     });
   } catch (error: any) {
     console.error('Application Submission Error:', error);
