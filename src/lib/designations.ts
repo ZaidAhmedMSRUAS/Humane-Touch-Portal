@@ -1,4 +1,4 @@
-import { UserRole } from '@prisma/client';
+﻿import { UserRole } from '@prisma/client';
 
 export interface DesignationUser {
   fullName?: string | null;
@@ -8,30 +8,30 @@ export interface DesignationUser {
 }
 
 /**
- * Returns the official designation label.
+ * Returns official designation label.
  * Prioritizes the database 'role' above all else.
- * A user with the role 'STUDENT' is ALWAYS a 'Student Scholar', regardless of name.
+ * Any account with role 'STUDENT' is strictly 'Student Scholar'.
  */
 export function getDesignation(
   userOrName?: DesignationUser | string | null,
   roleArg?: string | UserRole | null,
   phoneArg?: string | null
 ): string {
-  let fullName: string | null = null;
-  let role: string | null = null;
-  let phone: string | null = null;
+  let fullName = '';
+  let role = '';
+  let phone = '';
 
   if (typeof userOrName === 'object' && userOrName !== null) {
-    fullName = userOrName.fullName || userOrName.name || null;
-    role = (userOrName.role as string) || null;
-    phone = userOrName.phone || null;
-  } else {
-    fullName = userOrName || null;
-    role = (roleArg as string) || null;
-    phone = phoneArg || null;
+    fullName = String(userOrName.fullName || userOrName.name || '');
+    role = String(userOrName.role || '');
+    phone = String(userOrName.phone || '');
+  } else if (typeof userOrName === 'string') {
+    fullName = userOrName;
+    role = typeof roleArg === 'string' ? roleArg : '';
+    phone = typeof phoneArg === 'string' ? phoneArg : '';
   }
 
-  const normalizedRole = role ? String(role).toUpperCase().trim() : null;
+  const normalizedRole = role.toUpperCase().trim();
 
   // 1. HARD RULE: Any user with the STUDENT role is strictly a "Student Scholar"
   if (normalizedRole === 'STUDENT' || normalizedRole === UserRole.STUDENT) {
@@ -45,7 +45,7 @@ export function getDesignation(
 
   // 3. TRUSTEE: ONLY if database role is explicitly TRUSTEE
   if (normalizedRole === 'TRUSTEE' || normalizedRole === UserRole.TRUSTEE) {
-    if (fullName && /oomer|tazaiyun/i.test(fullName)) {
+    if (/oomer|tazaiyun/i.test(fullName)) {
       return 'Secretary & Trustee';
     }
     return 'Board of Trustees';
@@ -53,12 +53,12 @@ export function getDesignation(
 
   // 4. VOLUNTEER: ONLY if database role is explicitly VOLUNTEER
   if (normalizedRole === 'VOLUNTEER' || normalizedRole === UserRole.VOLUNTEER) {
-    if (phone === '9972533519' || (fullName && /nimra/i.test(fullName))) {
+    if (phone === '9972533519' || /nimra/i.test(fullName)) {
       return 'Head Volunteer Coordinator';
     }
     return 'Field Verification Volunteer';
   }
 
-  // 5. Default fallback: NEVER infer Admin, Trustee, or Volunteer from a name
+  // 5. Default fallback
   return 'Student Scholar';
 }
