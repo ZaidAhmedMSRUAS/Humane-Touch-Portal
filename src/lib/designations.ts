@@ -13,15 +13,15 @@ export interface DesignationUser {
  * Any account with role 'STUDENT' is strictly 'Student Scholar'.
  */
 export function getDesignation(
-  userOrName?: DesignationUser | string | null,
-  roleArg?: string | UserRole | null,
-  phoneArg?: string | null
+  userOrName?: any,
+  roleArg?: any,
+  phoneArg?: any
 ): string {
   let fullName = '';
   let role = '';
   let phone = '';
 
-  if (typeof userOrName === 'object' && userOrName !== null) {
+  if (userOrName && typeof userOrName === 'object') {
     fullName = String(userOrName.fullName || userOrName.name || '');
     role = String(userOrName.role || '');
     phone = String(userOrName.phone || '');
