@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
 
-// Configure Cloudinary using server-side environment variables
+// Configure Cloudinary from server environment variables
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
     if (!cloudName) {
       return NextResponse.json(
-        { error: 'Cloudinary Cloud Name is not configured on the server environment.' },
+        { error: 'Cloudinary is not configured. Please set CLOUDINARY_CLOUD_NAME in Netlify environment variables.' },
         { status: 500 }
       );
     }
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     const file = formData.get('file') as File | null;
 
     if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+      return NextResponse.json({ error: 'No file received.' }, { status: 400 });
     }
 
     const arrayBuffer = await file.arrayBuffer();
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error('Server Upload Handler Error:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to upload document to Cloudinary' },
+      { error: error.message || 'Failed to upload document.' },
       { status: 500 }
     );
   }
