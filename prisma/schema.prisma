@@ -79,6 +79,11 @@ model Application {
   personalStatement          String
   sslcMarksCardUrl      String?
   pucMarksCardUrl       String?
+  marksCardUrl      String?
+  incomeCertUrl      String?
+  feeDemandUrl      String?
+  idProofUrl      String?
+
   status                     ApplicationStatus     @default(SUBMITTED)
   
   docStudentAadhaar          String?

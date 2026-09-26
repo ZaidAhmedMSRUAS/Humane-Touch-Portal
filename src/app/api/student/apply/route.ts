@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -10,17 +10,39 @@ export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session || !session.user) {
-      return NextResponse.json({ error: 'Please log in as a student to apply.' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Session expired or not logged in. Please log in as a student to apply.' },
+        { status: 401 }
+      );
     }
 
-    const userId = (session.user as any).id;
+    let userId = (session.user as any).id;
+    if (!userId) {
+      const email = session.user.email;
+      const dbUser = await prisma.user.findFirst({
+        where: {
+          OR: [
+            ...(email ? [{ email }] : []),
+            ...(session.user.name ? [{ fullName: session.user.name }] : []),
+          ],
+        },
+      });
+      if (dbUser) userId = dbUser.id;
+    }
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Could not resolve student account. Please log out and log in again.' },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
 
     const missingDocs: string[] = [];
     const isValidDoc = (val: any) =>
       val && typeof val === 'string' && val.trim() !== '' && val.trim() !== 'null' && val.trim() !== 'undefined';
 
-    // 1. Mandatory Document Gating (Includes Compulsory SSLC & PUC)
     if (!isValidDoc(body.sslcMarksCardUrl)) missingDocs.push('SSLC (10th) Marks Card (*)');
     if (!isValidDoc(body.pucMarksCardUrl)) missingDocs.push('PUC / 12th Marks Card (*)');
     if (!isValidDoc(body.marksCardUrl)) missingDocs.push('Previous Year Marks Card (*)');
@@ -31,14 +53,13 @@ export async function POST(req: Request) {
     if (missingDocs.length > 0) {
       return NextResponse.json(
         {
-          error: `Submission rejected: All required documents must be uploaded. Missing: ${missingDocs.join(', ')}`,
+          error: `Missing mandatory documents: ${missingDocs.join(', ')}`,
           missingDocuments: missingDocs,
         },
         { status: 400 }
       );
     }
 
-    // 2. Strict Academic Marks Constraint (0 to 100%)
     const marksNum = Number(body.previousScoreMarks);
     if (isNaN(marksNum) || marksNum < 0 || marksNum > 100) {
       return NextResponse.json(
@@ -47,7 +68,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3. Validate Academic Fields
     if (
       !body.collegeName ||
       !body.courseName ||
@@ -57,7 +77,7 @@ export async function POST(req: Request) {
       !body.personalStatement
     ) {
       return NextResponse.json(
-        { error: 'All mandatory questions marked with (*) are required.' },
+        { error: 'All mandatory text fields marked with (*) are required.' },
         { status: 400 }
       );
     }
@@ -77,9 +97,13 @@ export async function POST(req: Request) {
         familyAnnualIncome: sanitizeAmount(body.familyAnnualIncome),
         annualTuitionFee: sanitizeAmount(body.annualTuitionFee),
         householdCategory: sanitizeText(body.householdCategory),
+        status: ApplicationStatus.SUBMITTED,
         sslcMarksCardUrl: body.sslcMarksCardUrl.trim(),
         pucMarksCardUrl: body.pucMarksCardUrl.trim(),
-        status: ApplicationStatus.SUBMITTED,
+        marksCardUrl: body.marksCardUrl.trim(),
+        incomeCertUrl: body.incomeCertUrl.trim(),
+        feeDemandUrl: body.feeDemandUrl.trim(),
+        idProofUrl: body.idProofUrl.trim(),
       },
     });
 
@@ -87,10 +111,13 @@ export async function POST(req: Request) {
       success: true,
       referenceNumber: refNumber,
       applicationId: application.id,
-      message: 'Application and document dossier registered successfully.',
+      message: 'Application registered successfully.',
     });
   } catch (error: any) {
-    console.error('Application Submission Error:', error);
-    return NextResponse.json({ error: error.message || 'Submission failed' }, { status: 500 });
+    console.error('API Application Submission Error:', error);
+    return NextResponse.json(
+      { error: error.message || 'Database error occurred while creating application.' },
+      { status: 500 }
+    );
   }
 }
