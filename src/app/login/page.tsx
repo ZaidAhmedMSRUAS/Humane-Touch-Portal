@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function AuthPage() {
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
 
@@ -254,7 +255,7 @@ export default function AuthPage() {
                   </Link>
                 </div>
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
