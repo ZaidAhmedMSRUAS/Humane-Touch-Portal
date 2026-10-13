@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
@@ -42,36 +43,48 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col justify-center items-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
-        {/* Top Header */}
-        <div className="bg-emerald-700 p-6 text-white text-center">
-          <h1 className="text-2xl font-bold tracking-tight">HUMANE TOUCH</h1>
-          <p className="text-emerald-100 text-xs mt-1">Scholarship & Verification Portal</p>
+    <div className="min-h-screen bg-amber-50/40 flex flex-col justify-center items-center p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-amber-200/80 overflow-hidden">
+        {/* Yellowish / Amber Header with Logo */}
+        <div className="bg-gradient-to-b from-amber-500 to-amber-600 p-6 text-white text-center flex flex-col items-center">
+          {/* Logo container */}
+          <div className="w-16 h-16 bg-white rounded-full p-2 shadow-md flex items-center justify-center mb-3">
+            <img
+              src="/logo.png"
+              alt="Humane Touch Logo"
+              className="w-full h-full object-contain"
+              onError={(e) => {
+                // Fallback if logo.png is named logo.svg or missing
+                (e.target as HTMLElement).style.display = 'none';
+              }}
+            />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight drop-shadow-sm">HUMANE TOUCH</h1>
+          <p className="text-amber-100 text-xs mt-0.5 font-medium">Scholarship & Verification Portal</p>
         </div>
 
         <div className="p-6 sm:p-8 space-y-6">
-          {/* New Student Registration Alert */}
-          <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs">
-            <span className="text-emerald-900 font-medium">New student applicant?</span>
+          {/* New Student Registration Banner */}
+          <div className="p-3.5 bg-amber-50/80 border border-amber-200 rounded-xl flex items-center justify-between text-xs">
+            <span className="text-amber-950 font-semibold">New student applicant?</span>
             <button
               type="button"
               onClick={() => router.push('/apply')}
-              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition"
+              className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg transition shadow-sm cursor-pointer"
             >
               Register Here
             </button>
           </div>
 
-          {/* Error Message Box */}
+          {/* Error Notice */}
           {errorMsg && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-center gap-2">
-              <span className="text-amber-600 font-bold text-sm">⚠️</span>
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2">
+              <span className="text-rose-500 font-bold text-sm">⚠️</span>
               <span>{errorMsg}</span>
             </div>
           )}
 
-          {/* Role Selection Tabs */}
+          {/* Role Segmented Tabs */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
               SIGN IN AS ROLE:
@@ -85,9 +98,9 @@ export default function LoginPage() {
                     setRole(r);
                     setErrorMsg(null);
                   }}
-                  className={`py-2 text-xs font-semibold rounded-lg transition ${
+                  className={`py-2 text-xs font-semibold rounded-lg transition cursor-pointer ${
                     role === r
-                      ? 'bg-white text-emerald-800 shadow-sm border border-slate-200'
+                      ? 'bg-white text-amber-700 shadow-sm border border-slate-200 font-bold'
                       : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
@@ -99,27 +112,27 @@ export default function LoginPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Phone */}
             <div className="space-y-1">
               <label className="block text-xs font-bold text-slate-700">
-                Registered Mobile Number <span className="text-red-500">*</span>
+                Registered Mobile Number <span className="text-rose-500">*</span>
               </label>
-              <div className="relative">
-                <input
-                  type="tel"
-                  required
-                  maxLength={10}
-                  placeholder="10-digit mobile number"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:bg-white"
-                />
-              </div>
+              <input
+                type="tel"
+                required
+                maxLength={10}
+                placeholder="10-digit mobile number"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition"
+              />
             </div>
 
+            {/* Password with View Toggle */}
             <div className="space-y-1">
               <div className="flex justify-between items-center">
                 <label className="block text-xs font-bold text-slate-700">
-                  Password <span className="text-red-500">*</span>
+                  Password <span className="text-rose-500">*</span>
                 </label>
                 {role === 'STUDENT' && (
                   <span className="text-[10px] text-slate-400">Default: Mobile Number</span>
@@ -132,12 +145,12 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-3.5 pr-11 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:bg-white"
+                  className="w-full pl-3.5 pr-11 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-700 cursor-pointer"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? (
@@ -154,10 +167,11 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {/* Yellow / Amber Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl transition duration-150 shadow-md disabled:opacity-50"
+              className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-xl transition duration-150 shadow-md hover:shadow-lg disabled:opacity-50 cursor-pointer"
             >
               {loading ? 'Signing In...' : `Sign In as ${role.charAt(0) + role.slice(1).toLowerCase()}`}
             </button>
