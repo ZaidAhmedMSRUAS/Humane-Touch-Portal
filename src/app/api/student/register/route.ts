@@ -42,7 +42,7 @@ export async function POST(req: Request) {
         fullName: cleanName,
         phone: cleanPhone,
         email: cleanEmail,
-        password: hashedPassword,
+        passwordHash: hashedPassword,
         role: 'STUDENT',
       },
     });

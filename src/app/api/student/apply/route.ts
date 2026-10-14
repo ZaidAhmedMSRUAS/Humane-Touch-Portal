@@ -49,7 +49,7 @@ export async function POST(req: Request) {
           data: {
             fullName,
             phone,
-            password: hashedPassword,
+            passwordHash: hashedPassword,
             role: 'STUDENT',
           },
         });
