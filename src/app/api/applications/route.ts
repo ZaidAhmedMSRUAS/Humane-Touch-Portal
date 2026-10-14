@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs';
 ﻿import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -8,16 +9,11 @@ import { ApplicationStatus } from '@prisma/client';
 
 export async function POST(req: Request) {
   try {
+    const body = await req.json();
     const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json(
-        { error: 'Session expired or not logged in. Please log in as a student to apply.' },
-        { status: 401 }
-      );
-    }
 
-    let userId = (session.user as any).id;
-    if (!userId) {
+    let userId = (session?.user as any)?.id;
+    if (!userId && session?.user) {
       const email = session.user.email;
       const dbUser = await prisma.user.findFirst({
         where: {
@@ -30,14 +26,37 @@ export async function POST(req: Request) {
       if (dbUser) userId = dbUser.id;
     }
 
+    // If no existing session, register or find the student account from the form submission
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Could not resolve student account. Please log out and log in again.' },
-        { status: 401 }
-      );
-    }
+      const rawPhone = body.phone || body.mobileNumber || body.studentPhone || body.mobile || body.registeredPhone;
+      const phone = rawPhone ? String(rawPhone).trim() : null;
+      const fullName = (body.fullName || body.studentName || body.name || 'Student Applicant').trim();
 
-    const body = await req.json();
+      if (!phone) {
+        return NextResponse.json(
+          { error: 'Mobile number is required to submit a student application.' },
+          { status: 400 }
+        );
+      }
+
+      let student = await prisma.user.findFirst({
+        where: { phone },
+      });
+
+      if (!student) {
+        const hashedPassword = await bcrypt.hash(phone, 10);
+        student = await prisma.user.create({
+          data: {
+            fullName,
+            phone,
+            password: hashedPassword,
+            role: 'STUDENT',
+          },
+        });
+      }
+
+      userId = student.id;
+    }
 
     const missingDocs: string[] = [];
     const isValidDoc = (val: any) =>
