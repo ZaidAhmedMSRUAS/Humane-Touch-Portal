@@ -15,29 +15,44 @@ export async function GET() {
       return NextResponse.json({ error: 'Trustee or Admin authorization required.' }, { status: 403 });
     }
 
-    const applications = await prisma.application.findMany({
-      include: {
-        student: {
-          select: {
-            id: true,
-            fullName: true,
-            phone: true,
-            email: true,
+    const isAdmin = (session.user as any).role === UserRole.ADMIN;
+    const [applications, registeredCandidates, approvedScholars, sanctionedAggregate] = await Promise.all([
+      prisma.application.findMany({
+        where: isAdmin ? undefined : { status: 'TRUSTEE_INTERVIEW' },
+        include: {
+          student: {
+            select: {
+              id: true,
+              fullName: true,
+              phone: true,
+              email: true,
+            },
           },
-        },
-        assignedVolunteer: {
-          select: {
-            id: true,
-            fullName: true,
-            phone: true,
+          assignedVolunteer: {
+            select: {
+              id: true,
+              fullName: true,
+              phone: true,
+            },
           },
+          verificationReport: true,
         },
-        verificationReport: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.application.count(),
+      prisma.application.count({ where: { status: 'APPROVED' } }),
+      prisma.application.aggregate({ where: { status: 'APPROVED' }, _sum: { sanctionedAmount: true } }),
+    ]);
 
-    return NextResponse.json({ success: true, applications });
+    return NextResponse.json({
+      success: true,
+      applications,
+      statistics: {
+        registeredCandidates,
+        approvedScholars,
+        sanctionedGrants: sanctionedAggregate._sum.sanctionedAmount || 0,
+      },
+    });
   } catch (error: any) {
     console.error('Error fetching trustee applications:', error);
     return NextResponse.json({ error: error.message || 'Failed to fetch applications' }, { status: 500 });

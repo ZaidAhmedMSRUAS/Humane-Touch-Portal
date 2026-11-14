@@ -22,6 +22,8 @@ export async function POST(req: Request) {
     }
 
     const currentTrustee = trusteeName || session.user.name || 'Board of Trustees';
+    const eligible = await prisma.application.findFirst({ where: { id: applicationId, status: ApplicationStatus.TRUSTEE_INTERVIEW } });
+    if (!eligible) return NextResponse.json({ error: 'This application has not completed volunteer verification.' }, { status: 409 });
 
     if (decision === 'APPROVE') {
       const grant = Number(sanctionedAmount);
@@ -32,8 +34,11 @@ export async function POST(req: Request) {
       const updated = await prisma.application.update({
         where: { id: applicationId },
         data: {
-          status: ApplicationStatus.APPROVED,
+          status: ApplicationStatus.ADMIN_FINALIZATION,
           sanctionedAmount: grant,
+          interviewScore: Number(interviewScore) || null,
+          interviewRemarks: String(interviewNotes || '').trim(),
+          interviewConductedBy: currentTrustee,
         },
       });
 
@@ -48,7 +53,10 @@ export async function POST(req: Request) {
       const updated = await prisma.application.update({
         where: { id: applicationId },
         data: {
-          status: ApplicationStatus.REJECTED,
+          status: ApplicationStatus.ADMIN_FINALIZATION,
+          interviewScore: Number(interviewScore) || null,
+          interviewRemarks: String(interviewNotes || '').trim(),
+          interviewConductedBy: currentTrustee,
         },
       });
 

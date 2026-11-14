@@ -127,17 +127,14 @@ export default function LoginPage() {
           </button>
           <button
             type="button"
-            onClick={() => {
-              setTabMode('REGISTER');
-              setErrorMsg(null);
-            }}
+            onClick={() => router.push('/register')}
             className={`py-2.5 px-4 rounded-xl text-sm font-bold transition cursor-pointer ${
               tabMode === 'REGISTER'
                 ? 'bg-white text-slate-900 shadow-sm'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            New Student Register
+            Create Account
           </button>
         </div>
 

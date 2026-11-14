@@ -21,6 +21,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Application ID is required.' }, { status: 400 });
     }
 
+    const eligible = await prisma.application.findFirst({ where: { id: applicationId, status: ApplicationStatus.TRUSTEE_INTERVIEW } });
+    if (!eligible) return NextResponse.json({ error: 'Application must complete volunteer verification before trustee review.' }, { status: 409 });
+
     if (action === 'APPROVE') {
       const amount = Number(sanctionedAmount);
       if (isNaN(amount) || amount <= 0) {
@@ -30,7 +33,7 @@ export async function POST(req: Request) {
       const updated = await prisma.application.update({
         where: { id: applicationId },
         data: {
-          status: ApplicationStatus.APPROVED,
+          status: ApplicationStatus.ADMIN_FINALIZATION,
           sanctionedAmount: amount,
         },
       });
@@ -46,7 +49,7 @@ export async function POST(req: Request) {
       const updated = await prisma.application.update({
         where: { id: applicationId },
         data: {
-          status: ApplicationStatus.REJECTED,
+          status: ApplicationStatus.ADMIN_FINALIZATION,
         },
       });
 

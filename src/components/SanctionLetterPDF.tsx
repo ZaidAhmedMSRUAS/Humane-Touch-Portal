@@ -27,22 +27,14 @@ export default function SanctionLetterPDF({ application, onClose }: LetterProps)
   const handleDownloadPDF = async () => {
     setDownloading(true);
     try {
-      if (!(window as any).html2pdf) {
-        await new Promise((resolve, reject) => {
-          const script = document.createElement('script');
-          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-          script.onload = resolve;
-          script.onerror = reject;
-          document.head.appendChild(script);
-        });
-      }
-
       const element = document.getElementById('printable-sanction-letter');
+      if (!element) throw new Error('Award letter preview is not ready.');
+      const html2pdf = (await import('html2pdf.js')).default;
       
       const opt = {
         margin: 0, // Zero margin to prevent top white space offset
         filename: `HumaneTouch_Award_Letter_${studentName.replace(/\s+/g, '_')}_${refNumber.replace(/\//g, '_')}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
+        image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: { 
           scale: 2.5, 
           useCORS: true, 
@@ -50,11 +42,11 @@ export default function SanctionLetterPDF({ application, onClose }: LetterProps)
           scrollY: 0, 
           scrollX: 0 
         },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const },
         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
       };
 
-      await (window as any).html2pdf().set(opt).from(element).save();
+      await html2pdf().set(opt).from(element).save();
     } catch (err) {
       console.error('PDF Generation failed, falling back to print dialog:', err);
       window.print();
@@ -95,24 +87,25 @@ export default function SanctionLetterPDF({ application, onClose }: LetterProps)
         }
       `}</style>
 
-      <div className="bg-white rounded-2xl max-w-4xl w-full shadow-2xl flex flex-col max-h-[96vh] overflow-hidden border border-slate-200">
+      <div className="bg-white rounded-2xl max-w-4xl w-full shadow-2xl flex flex-col h-[96vh] max-h-[96vh] overflow-hidden border border-slate-200">
         
         {/* Toolbar */}
-        <div className="px-6 py-3.5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+        <div className="sticky top-0 z-30 shrink-0 px-6 py-3.5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
           <div>
             <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">Scholarship Sanction Award Letter</h3>
             <p className="text-[11px] text-slate-500 font-mono">Ref ID: {refNumber}</p>
           </div>
           <button 
             onClick={onClose} 
-            className="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 flex items-center justify-center font-bold text-sm transition"
+            aria-label="Close award letter"
+            className="w-9 h-9 rounded-full bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center font-bold text-sm shadow transition"
           >
             ✕
           </button>
         </div>
 
         {/* Letter Preview Container */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-200/90 flex justify-center items-center">
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-200/90 flex justify-center items-start">
           
           <div id="printable-letter-wrapper" className="flex justify-center items-center">
             
@@ -244,7 +237,7 @@ export default function SanctionLetterPDF({ application, onClose }: LetterProps)
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 bg-white border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
+        <div className="shrink-0 p-4 bg-white border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
           <p className="text-xs text-slate-500 text-center sm:text-left font-mono">
             Official Award Ref: {refNumber}
           </p>

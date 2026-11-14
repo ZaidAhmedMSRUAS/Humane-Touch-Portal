@@ -11,10 +11,27 @@ export default function RegisterPage() {
     email: '',
     password: '',
     confirmPassword: '',
+    otpCode: '',
+    accountType: 'STUDENT' as 'STUDENT' | 'VOLUNTEER' | 'TRUSTEE',
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
+
+  const sendOtp = async () => {
+    const email = formData.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError('Enter a valid email address before requesting your OTP.'); return; }
+    setOtpLoading(true); setError(null);
+    try {
+      const res = await fetch('/api/auth/otp/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier: email, type: 'EMAIL_VERIFY' }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not send verification code.');
+      setOtpSent(true);
+    } catch (err: any) { setError(err.message || 'Could not send verification code.'); }
+    finally { setOtpLoading(false); }
+  };
 
   // Filter phone input to strictly numbers and max 10 digits
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,12 +86,14 @@ export default function RegisterPage() {
           phone: formData.phone.trim(),
           email: formData.email.trim().toLowerCase(),
           password: formData.password,
+          otpCode: formData.otpCode,
+          role: formData.accountType,
         }),
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
-        alert('Account registered successfully! Redirecting to login...');
+        alert(data.message || 'Account request submitted.');
         router.push('/login');
       } else {
         setError(data.error || 'Registration failed. Please check your details.');
@@ -94,9 +113,9 @@ export default function RegisterPage() {
           <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 px-3 py-1 rounded-md border border-amber-200">
             Humane Touch Trust
           </span>
-          <h1 className="text-2xl font-black text-slate-900 mt-2">New Student Registration</h1>
+          <h1 className="text-2xl font-black text-slate-900 mt-2">Create Your Portal Account</h1>
           <p className="text-xs text-slate-500">
-            Register to apply for the Udaan Higher Education Scholarship
+            Register as a student, volunteer, or trustee
           </p>
         </div>
 
@@ -108,6 +127,15 @@ export default function RegisterPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Register as <span className="text-rose-500">*</span></label>
+            <select required value={formData.accountType} onChange={(e) => setFormData({ ...formData, accountType: e.target.value as typeof formData.accountType })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-amber-500 font-semibold">
+              <option value="STUDENT">Student</option>
+              <option value="VOLUNTEER">Volunteer</option>
+              <option value="TRUSTEE">Trustee</option>
+            </select>
+            {formData.accountType !== 'STUDENT' && <p className="mt-1 text-[10px] text-amber-800">Volunteer and trustee accounts need admin approval before sign in.</p>}
+          </div>
           <div>
             <label className="block font-bold text-slate-700 mb-1">
               Full Legal Name <span className="text-rose-500">*</span>
@@ -155,6 +183,15 @@ export default function RegisterPage() {
             />
           </div>
 
+          <div className="grid grid-cols-[1fr_auto] gap-2 items-end">
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">Email verification code <span className="text-rose-500">*</span></label>
+              <input type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6} required placeholder="6 digit OTP" value={formData.otpCode} onChange={(e) => setFormData({ ...formData, otpCode: e.target.value.replace(/\D/g, '').slice(0, 6) })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-amber-500 font-mono tracking-widest" />
+            </div>
+            <button type="button" onClick={sendOtp} disabled={otpLoading} className="px-4 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-700 disabled:opacity-50">{otpLoading ? 'Sending…' : otpSent ? 'Resend code' : 'Send OTP'}</button>
+            {otpSent && <p className="col-span-2 text-[11px] text-emerald-700 font-semibold">A verification code was sent to your email. It expires in 10 minutes.</p>}
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block font-bold text-slate-700 mb-1">
@@ -191,7 +228,7 @@ export default function RegisterPage() {
             disabled={loading}
             className="w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl shadow transition cursor-pointer disabled:opacity-50 mt-2"
           >
-            {loading ? 'Validating & Registering...' : 'Register Student Account'}
+            {loading ? 'Submitting...' : formData.accountType === 'STUDENT' ? 'Create Student Account' : `Request ${formData.accountType === 'VOLUNTEER' ? 'Volunteer' : 'Trustee'} Account`}
           </button>
         </form>
 

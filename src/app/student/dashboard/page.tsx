@@ -32,6 +32,14 @@ export default function StudentDashboardPage() {
   }, []);
 
   const isApproved = application?.status === 'APPROVED';
+  const statusLabels: Record<string, string> = {
+    SUBMITTED: 'Application received',
+    DOC_VERIFICATION: 'Volunteer verification',
+    TRUSTEE_INTERVIEW: 'Trustee review',
+    ADMIN_FINALIZATION: 'Final admin review',
+    APPROVED: 'Scholarship approved',
+    REJECTED: 'Application closed',
+  };
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -56,7 +64,7 @@ export default function StudentDashboardPage() {
             You have not submitted an application for the 2026-27 Udaan Scholarship cycle yet.
           </p>
           <Link
-            href="/apply"
+            href="/student/apply"
             className="inline-block px-6 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl shadow transition"
           >
             Apply for Scholarship Now
@@ -78,7 +86,7 @@ export default function StudentDashboardPage() {
                 <span className={`px-3 py-1 font-black rounded-xl text-xs inline-block border ${
                   isApproved ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-amber-50 text-amber-800 border-amber-300'
                 }`}>
-                  {isApproved ? '✓ Grant Approved by Trustees' : application.status}
+                  {statusLabels[application.status] || application.status}
                 </span>
               </div>
             </div>
@@ -102,6 +110,32 @@ export default function StudentDashboardPage() {
                 <span className="font-mono font-bold text-emerald-800">
                   {application.sanctionedAmount ? `₹${application.sanctionedAmount.toLocaleString('en-IN')}` : 'Pending Sanction'}
                 </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="bg-slate-50 p-3.5 rounded-2xl">
+                <span className="text-slate-400 text-[10px] block">Parent / Guardian</span>
+                <span className="font-bold text-slate-900">{application.parentName || 'Not provided'}</span>
+              </div>
+              <div className="bg-slate-50 p-3.5 rounded-2xl">
+                <span className="text-slate-400 text-[10px] block">Aadhaar Number</span>
+                <span className="font-mono font-bold text-slate-900">{application.aadhaarNumber ? `•••• •••• ${application.aadhaarNumber.slice(-4)}` : 'Not provided'}</span>
+              </div>
+              <div className="sm:col-span-2 bg-slate-50 p-4 rounded-2xl">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <span className="font-black text-slate-800">Uploaded documents</span>
+                  <span className="text-[10px] text-slate-400">Stored securely in Cloudinary</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    ['SSLC marks card', application.sslcMarksCardUrl], ['PUC marks card', application.pucMarksCardUrl],
+                    ['Previous marks card', application.marksCardUrl], ['Income certificate', application.incomeCertUrl],
+                    ['Fee demand note', application.feeDemandUrl], ['Student identity proof', application.idProofUrl],
+                  ] as [string, string | null][]).filter(([, url]) => !!url).map(([label, url]) => (
+                    <a key={label} href={url!} target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 bg-white px-3 py-2 font-bold text-emerald-800 hover:border-emerald-400 hover:bg-emerald-50">View {label} ↗</a>
+                  ))}
+                </div>
               </div>
             </div>
 

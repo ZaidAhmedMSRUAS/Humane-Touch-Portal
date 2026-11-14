@@ -35,12 +35,12 @@ export async function GET() {
         orderBy: { createdAt: 'desc' },
       }),
       prisma.user.findMany({
-        where: { role: UserRole.VOLUNTEER },
+        where: { role: UserRole.VOLUNTEER, isActive: true },
         select: { id: true, fullName: true, phone: true },
         orderBy: { fullName: 'asc' },
       }),
       prisma.user.findMany({
-        select: { id: true, fullName: true, phone: true, role: true },
+        select: { id: true, fullName: true, phone: true, email: true, role: true, isActive: true, createdAt: true },
         orderBy: { role: 'asc' },
       }),
     ]);
@@ -60,6 +60,18 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const { action } = body;
+
+    if (action === 'APPROVE_STAFF_REGISTRATION') {
+      const { targetUserId } = body;
+      if (!targetUserId) return NextResponse.json({ error: 'User ID is required.' }, { status: 400 });
+      const pendingUser = await prisma.user.findUnique({ where: { id: targetUserId }, select: { id: true, fullName: true, role: true, isActive: true } });
+      if (!pendingUser || (pendingUser.role !== UserRole.VOLUNTEER && pendingUser.role !== UserRole.TRUSTEE)) {
+        return NextResponse.json({ error: 'Only volunteer or trustee registrations can be approved here.' }, { status: 400 });
+      }
+      if (pendingUser.isActive) return NextResponse.json({ error: 'This account is already active.' }, { status: 409 });
+      const approvedUser = await prisma.user.update({ where: { id: pendingUser.id }, data: { isActive: true } });
+      return NextResponse.json({ success: true, message: `${approvedUser.fullName}'s ${approvedUser.role.toLowerCase()} account is approved and can now sign in.` });
+    }
 
     // 1. UPDATE STUDENT APPLICATION DETAILS (Admin Edit Access)
     if (action === 'UPDATE_APPLICATION') {
@@ -107,10 +119,17 @@ export async function POST(req: Request) {
     // 2. ASSIGN VOLUNTEER
     if (action === 'ASSIGN_VOLUNTEER') {
       const { applicationId, volunteerId } = body;
+      if (!applicationId || !volunteerId) return NextResponse.json({ error: 'Select an application and volunteer.' }, { status: 400 });
+      const current = await prisma.application.findUnique({ where: { id: applicationId } });
+      const volunteer = await prisma.user.findFirst({ where: { id: volunteerId, role: UserRole.VOLUNTEER, isActive: true } });
+      if (!current || !volunteer) return NextResponse.json({ error: 'Application or active volunteer not found.' }, { status: 404 });
+      if (current.assignedVolunteerId && current.assignedVolunteerId !== volunteerId) return NextResponse.json({ error: 'This application is already assigned to another volunteer.' }, { status: 409 });
+      if (current.status !== 'SUBMITTED' && current.assignedVolunteerId !== volunteerId) return NextResponse.json({ error: 'Assignment is locked after verification begins.' }, { status: 409 });
       const updated = await prisma.application.update({
         where: { id: applicationId },
         data: {
-          assignedVolunteerId: volunteerId || null,
+          assignedVolunteerId: volunteerId,
+          status: 'DOC_VERIFICATION',
         },
       });
       return NextResponse.json({ success: true, application: updated });
@@ -118,16 +137,25 @@ export async function POST(req: Request) {
 
     // 3. UPDATE CHEQUE DETAILS
     if (action === 'UPDATE_CHEQUE') {
-      const { applicationId, chequeNumber, chequeInFavourOf, sanctionedAmount, status } = body;
+      const { applicationId, chequeNumber, chequeInFavourOf, sanctionedAmount } = body;
       const updated = await prisma.application.update({
         where: { id: applicationId },
         data: {
           ...(chequeNumber !== undefined && { chequeNumber: chequeNumber.trim() }),
           ...(chequeInFavourOf !== undefined && { chequeInFavourOf: chequeInFavourOf.trim() }),
           ...(sanctionedAmount !== undefined && { sanctionedAmount: Number(sanctionedAmount) }),
-          ...(status && { status }),
         },
       });
+      return NextResponse.json({ success: true, application: updated });
+    }
+
+    if (action === 'FINALIZE_APPLICATION') {
+      const { applicationId, decision } = body;
+      if (!applicationId || !['APPROVED', 'REJECTED'].includes(decision)) return NextResponse.json({ error: 'Choose an approval or rejection decision.' }, { status: 400 });
+      const application = await prisma.application.findFirst({ where: { id: applicationId, status: 'ADMIN_FINALIZATION' } });
+      if (!application) return NextResponse.json({ error: 'This application is not awaiting admin finalization.' }, { status: 409 });
+      if (decision === 'APPROVED' && (!application.sanctionedAmount || application.sanctionedAmount <= 0)) return NextResponse.json({ error: 'A positive trustee sanctioned amount is required before approval.' }, { status: 400 });
+      const updated = await prisma.application.update({ where: { id: applicationId }, data: { status: decision } });
       return NextResponse.json({ success: true, application: updated });
     }
 

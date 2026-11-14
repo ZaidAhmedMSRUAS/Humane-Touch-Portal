@@ -6,6 +6,26 @@ import { generateApplicationRefNumber } from '@/lib/refGenerator';
 import { sanitizeAmount, sanitizeMarks, sanitizeText } from '@/lib/validation';
 import { ApplicationStatus } from '@prisma/client';
 
+export async function GET() {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) return NextResponse.json({ error: 'Please log in.' }, { status: 401 });
+    const userId = (session.user as any).id;
+    const application = await prisma.application.findFirst({
+      where: { studentId: userId },
+      include: {
+        student: { select: { id: true, fullName: true, phone: true, email: true } },
+        assignedVolunteer: { select: { fullName: true } },
+        verificationReport: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return NextResponse.json({ success: true, application });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || 'Could not load application.' }, { status: 500 });
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -15,6 +35,11 @@ export async function POST(req: Request) {
 
     const userId = (session.user as any).id;
     const body = await req.json();
+
+    const existingApplication = await prisma.application.findFirst({ where: { studentId: userId } });
+    if (existingApplication) {
+      return NextResponse.json({ error: 'You already have an application. Track it from your dashboard.', applicationId: existingApplication.id }, { status: 409 });
+    }
 
     const missingDocs: string[] = [];
 
@@ -36,9 +61,12 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!body.collegeName || !body.courseName || !body.currentYearOfStudy || !body.householdCategory) {
+    if (!body.collegeName || !body.courseName || !body.currentYearOfStudy || !body.householdCategory || !body.parentName?.trim()) {
       return NextResponse.json({ error: 'All asterisk (*) questions must be filled.' }, { status: 400 });
     }
+
+    const aadhaarNumber = String(body.aadhaarNumber || '').replace(/\s/g, '');
+    if (!/^\d{12}$/.test(aadhaarNumber)) return NextResponse.json({ error: 'Aadhaar number must contain 12 digits.' }, { status: 400 });
 
     const refNumber = await generateApplicationRefNumber(body.courseName);
 
@@ -51,10 +79,18 @@ export async function POST(req: Request) {
         currentYearOfStudy: sanitizeText(body.currentYearOfStudy),
         residentialAddress: sanitizeText(body.residentialAddress, 500),
         personalStatement: sanitizeText(body.personalStatement, 2000),
+        aadhaarNumber,
+        parentName: sanitizeText(body.parentName, 100),
         previousScoreMarks: sanitizeMarks(body.previousScoreMarks),
         familyAnnualIncome: sanitizeAmount(body.familyAnnualIncome),
         annualTuitionFee: sanitizeAmount(body.annualTuitionFee),
         householdCategory: sanitizeText(body.householdCategory),
+        sslcMarksCardUrl: body.sslcMarksCardUrl,
+        pucMarksCardUrl: body.pucMarksCardUrl,
+        marksCardUrl: body.marksCardUrl,
+        incomeCertUrl: body.incomeCertUrl,
+        feeDemandUrl: body.feeDemandUrl,
+        idProofUrl: body.idProofUrl,
         status: ApplicationStatus.SUBMITTED,
       },
     });

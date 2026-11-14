@@ -29,6 +29,7 @@ export default function AdminDashboardPage() {
   const [passwordResetUser, setPasswordResetUser] = useState<any | null>(null);
   const [newPasswordInput, setNewPasswordInput] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [approvingUserId, setApprovingUserId] = useState<string | null>(null);
 
   const fetchAdminData = async () => {
     setLoading(true);
@@ -67,6 +68,32 @@ export default function AdminDashboardPage() {
       }
     } catch (err: any) {
       alert(err.message || 'Error occurred');
+    }
+  };
+
+  const finalizeApplication = async (applicationId: string, decision: 'APPROVED' | 'REJECTED') => {
+    const res = await fetch('/api/admin/actions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'FINALIZE_APPLICATION', applicationId, decision }) });
+    const data = await res.json();
+    if (res.ok && data.success) fetchAdminData();
+    else alert(data.error || 'Could not finalize application.');
+  };
+
+  const approveStaffRegistration = async (userId: string) => {
+    setApprovingUserId(userId);
+    try {
+      const res = await fetch('/api/admin/actions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'APPROVE_STAFF_REGISTRATION', targetUserId: userId }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Could not approve account.');
+      await fetchAdminData();
+      alert(data.message);
+    } catch (err: any) {
+      alert(err.message || 'Could not approve account.');
+    } finally {
+      setApprovingUserId(null);
     }
   };
 
@@ -179,7 +206,7 @@ export default function AdminDashboardPage() {
             activeTab === 'users' ? 'bg-amber-500 text-slate-950 shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
           }`}
         >
-          👥 User Directory & Passwords ({users.length})
+          👥 User Directory & Approvals ({users.length})
         </button>
         <button
           onClick={() => setActiveTab('deletions')}
@@ -231,8 +258,9 @@ export default function AdminDashboardPage() {
                         <td className="py-3 px-3">
                           <select
                             value={app.assignedVolunteerId || ''}
+                            disabled={!!app.assignedVolunteerId || app.status !== 'SUBMITTED'}
                             onChange={(e) => handleAssignVolunteer(app.id, e.target.value)}
-                            className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold"
+                            className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold disabled:opacity-70"
                           >
                             <option value="">Unassigned</option>
                             {volunteers.map((v) => (
@@ -276,6 +304,11 @@ export default function AdminDashboardPage() {
                             >
                               ✏️ Edit
                             </button>
+
+                            {app.status === 'ADMIN_FINALIZATION' && <>
+                              <button onClick={() => finalizeApplication(app.id, 'APPROVED')} className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-[11px]">Finalize approval</button>
+                              <button onClick={() => finalizeApplication(app.id, 'REJECTED')} className="px-2.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-[11px]">Finalize rejection</button>
+                            </>}
 
                             {/* Cheque Disbursal */}
                             <button
@@ -326,7 +359,8 @@ export default function AdminDashboardPage() {
       {/* Users Directory */}
       {activeTab === 'users' && (
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
-          <h3 className="text-base font-black text-slate-900 mb-4">All Registered Staff & Student Accounts</h3>
+          <h3 className="text-base font-black text-slate-900 mb-1">Accounts & Staff Registration Requests</h3>
+          <p className="text-xs text-slate-500 mb-4">Volunteer and trustee accounts remain locked until an admin approves them.</p>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold">
@@ -334,6 +368,7 @@ export default function AdminDashboardPage() {
                   <th className="py-3 px-4">Full Name</th>
                   <th className="py-3 px-4">Phone Number</th>
                   <th className="py-3 px-4">Designation</th>
+                  <th className="py-3 px-4">Account status</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
@@ -347,7 +382,15 @@ export default function AdminDashboardPage() {
                         {getDesignation(u.fullName, u.role, u.phone)}
                       </span>
                     </td>
+                    <td className="py-3.5 px-4">
+                      {!u.isActive && (u.role === 'VOLUNTEER' || u.role === 'TRUSTEE') ? (
+                        <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-black text-amber-800">Pending approval</span>
+                      ) : (
+                        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-black text-emerald-800">Active</span>
+                      )}
+                    </td>
                     <td className="py-3.5 px-4 text-right">
+                      {!u.isActive && (u.role === 'VOLUNTEER' || u.role === 'TRUSTEE') && <button onClick={() => approveStaffRegistration(u.id)} disabled={approvingUserId === u.id} className="mr-2 rounded-xl bg-emerald-700 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-emerald-800 disabled:opacity-50">{approvingUserId === u.id ? 'Approving...' : 'Approve account'}</button>}
                       <button
                         onClick={() => {
                           setPasswordResetUser(u);
@@ -399,6 +442,8 @@ export default function AdminDashboardPage() {
               <div className="bg-slate-50 p-3 rounded-xl"><strong>Annual Income:</strong> ₹{infoModalApp.familyAnnualIncome?.toLocaleString('en-IN')}</div>
               <div className="bg-slate-50 p-3 rounded-xl"><strong>Tuition Fee:</strong> ₹{infoModalApp.annualTuitionFee?.toLocaleString('en-IN')}</div>
               <div className="bg-slate-50 p-3 rounded-xl"><strong>Status:</strong> {infoModalApp.status}</div>
+              <div className="bg-slate-50 p-3 rounded-xl"><strong>Parent / Guardian:</strong> {infoModalApp.parentName || '—'}</div>
+              <div className="bg-slate-50 p-3 rounded-xl"><strong>Aadhaar:</strong> {infoModalApp.aadhaarNumber ? `•••• •••• ${infoModalApp.aadhaarNumber.slice(-4)}` : '—'}</div>
             </div>
 
             {infoModalApp.residentialAddress && (
@@ -412,6 +457,14 @@ export default function AdminDashboardPage() {
                 <strong>Personal Statement:</strong> {infoModalApp.personalStatement}
               </div>
             )}
+
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <h4 className="mb-3 text-xs font-black uppercase tracking-wider text-slate-700">Cloudinary documents</h4>
+              <div className="flex flex-wrap gap-2">
+                {([['SSLC marks card', infoModalApp.sslcMarksCardUrl], ['PUC marks card', infoModalApp.pucMarksCardUrl], ['Previous marks card', infoModalApp.marksCardUrl], ['Income certificate', infoModalApp.incomeCertUrl], ['Fee demand note', infoModalApp.feeDemandUrl], ['Student ID proof', infoModalApp.idProofUrl]] as [string, string | null][]).filter(([, url]) => !!url).map(([label, url]) => <a key={label} href={url!} target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-bold text-emerald-800 hover:bg-emerald-50">{label} ↗</a>)}
+                {!infoModalApp.idProofUrl && !infoModalApp.marksCardUrl && <span className="text-xs text-slate-500">No documents were saved on this application.</span>}
+              </div>
+            </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
               <button

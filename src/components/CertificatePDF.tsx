@@ -38,22 +38,14 @@ export default function CertificatePDF({ application, onClose }: CertificateProp
   const handleDownloadPDF = async () => {
     setDownloading(true);
     try {
-      if (!(window as any).html2pdf) {
-        await new Promise((resolve, reject) => {
-          const script = document.createElement('script');
-          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-          script.onload = resolve;
-          script.onerror = reject;
-          document.head.appendChild(script);
-        });
-      }
-
       const element = document.getElementById('printable-certificate');
+      if (!element) throw new Error('Certificate preview is not ready.');
+      const html2pdf = (await import('html2pdf.js')).default;
       
       const opt = {
         margin: 0,
         filename: `Udaan_Certificate_${studentName.replace(/\s+/g, '_')}_${refNumber.replace(/\//g, '_')}.pdf`,
-        image: { type: 'jpeg', quality: 1.0 },
+        image: { type: 'jpeg' as const, quality: 1.0 },
         html2canvas: {
           scale: 3,
           useCORS: true,
@@ -62,14 +54,14 @@ export default function CertificatePDF({ application, onClose }: CertificateProp
           scrollY: 0,
         },
         jsPDF: {
-          unit: 'mm',
-          format: 'a4',
-          orientation: 'landscape',
+          unit: 'mm' as const,
+          format: 'a4' as const,
+          orientation: 'landscape' as const,
         },
         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
       };
 
-      await (window as any).html2pdf().set(opt).from(element).save();
+      await html2pdf().set(opt).from(element).save();
     } catch (err) {
       console.error('Certificate PDF generation failed, falling back to print dialog:', err);
       window.print();
@@ -111,10 +103,10 @@ export default function CertificatePDF({ application, onClose }: CertificateProp
         }
       `}</style>
 
-      <div className="bg-white rounded-3xl max-w-5xl w-full shadow-2xl flex flex-col max-h-[96vh] overflow-hidden border border-slate-200">
+      <div className="bg-white rounded-3xl max-w-5xl w-full shadow-2xl flex flex-col h-[96vh] max-h-[96vh] overflow-hidden border border-slate-200">
         
         {/* Modal Toolbar */}
-        <div className="px-6 py-3.5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+        <div className="sticky top-0 z-30 shrink-0 px-6 py-3.5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
           <div>
             <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">
               Udaan Certificate of Accomplishment
@@ -125,14 +117,15 @@ export default function CertificatePDF({ application, onClose }: CertificateProp
           </div>
           <button 
             onClick={onClose} 
-            className="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 flex items-center justify-center font-bold text-sm transition"
+            aria-label="Close certificate"
+            className="w-9 h-9 rounded-full bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center font-bold text-sm shadow transition"
           >
             ✕
           </button>
         </div>
 
         {/* Certificate Display Canvas */}
-        <div className="flex-1 overflow-auto p-4 sm:p-8 bg-slate-900 flex justify-center items-center">
+        <div className="min-h-0 flex-1 overflow-auto p-4 sm:p-8 bg-slate-900 flex justify-center items-start">
           
           <div id="certificate-render-wrapper" className="flex justify-center items-center">
             
@@ -303,7 +296,7 @@ export default function CertificatePDF({ application, onClose }: CertificateProp
         </div>
 
         {/* Modal Actions */}
-        <div className="p-4 bg-white border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
+        <div className="shrink-0 p-4 bg-white border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
           <p className="text-xs text-slate-500 font-medium">
             Certificate for <strong>{studentName}</strong> calibrated for single-page A4 landscape download.
           </p>

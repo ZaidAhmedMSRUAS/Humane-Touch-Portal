@@ -3,7 +3,106 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply bg-slate-50 text-slate-800 antialiased;
+  :root {
+    --portal-ink: #17251f;
+    --portal-green: #172c24;
+    --portal-green-soft: #243b32;
+    --portal-gold: #ffd64f;
+    --portal-orange: #df7900;
+    --portal-paper: #f4f3ee;
+    --portal-line: #e2e5e0;
   }
+
+  body {
+    @apply text-slate-800 antialiased;
+    background: radial-gradient(ellipse at 5% 4%, rgba(218, 187, 128, .13), transparent 32rem),
+      radial-gradient(ellipse at 98% 20%, rgba(42, 81, 66, .08), transparent 34rem), var(--portal-paper);
+    color: var(--portal-ink);
+    font-family: Inter, "Segoe UI", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  ::selection { background: rgba(210, 155, 67, .28); }
+  input, select, textarea { transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease; }
+  button, a { -webkit-tap-highlight-color: transparent; }
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 3px solid rgba(210, 155, 67, .5);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .portal-panel { @apply bg-white/90 border border-slate-200/80 shadow-sm; backdrop-filter: blur(12px); }
+  .portal-eyebrow { @apply text-[10px] font-black uppercase tracking-[.2em]; color: var(--portal-green); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  main > * { animation: portal-enter .42s ease both; }
+  @keyframes portal-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+}
+
+/* Shared Udaan visual language across all role portals and forms. */
+nav {
+  min-height: 76px;
+  background: rgba(255, 255, 255, .94) !important;
+  border-color: var(--portal-line) !important;
+  box-shadow: 0 4px 20px rgba(22, 39, 31, .035);
+  backdrop-filter: blur(18px);
+}
+nav > div { max-width: 1536px !important; }
+nav .h-16 { height: 76px; }
+nav a, nav button { transition: transform .18s ease, background-color .18s ease, box-shadow .18s ease; }
+nav a:hover, nav button:hover { transform: translateY(-1px); }
+nav a[href="/login"] { background: var(--portal-orange) !important; color: white !important; }
+nav a[href="/login"]:hover { background: #c96500 !important; }
+
+body > div > footer, footer {
+  background: rgba(255, 255, 255, .82) !important;
+  border-color: var(--portal-line) !important;
+  letter-spacing: .015em;
+}
+main { max-width: 1660px !important; }
+main > div.max-w-7xl { max-width: 1440px !important; }
+
+/* Deep green replaces the old charcoal dashboard banners and panels. */
+[class~="bg-slate-900"], [class~="bg-slate-950"] { background-color: var(--portal-green) !important; }
+[class*="from-slate-900"] { background-image: linear-gradient(112deg, #172c24 0%, #20382f 62%, #263f35 100%) !important; }
+[class~="bg-slate-800"] { background-color: #263b32 !important; }
+[class~="bg-slate-700"] { background-color: #365045 !important; }
+[class~="bg-amber-500"], [class~="bg-amber-600"] { background-color: var(--portal-gold) !important; }
+[class~="bg-amber-400"] { background-color: #ffe58a !important; }
+[class~="text-slate-950"] { color: var(--portal-green) !important; }
+[class~="text-amber-400"], [class~="text-amber-300"] { color: var(--portal-gold) !important; }
+[class~="text-amber-600"], [class~="text-amber-700"] { color: #a95700 !important; }
+[class~="border-amber-500"] { border-color: #e0b83e !important; }
+
+/* Softer paper cards, consistent borders, and more spacious surfaces. */
+[class~="bg-white"] { background-color: rgba(255, 255, 255, .96) !important; }
+[class~="bg-slate-50"] { background-color: #f7f7f2 !important; }
+[class~="bg-slate-100"] { background-color: #efefe9 !important; }
+[class~="bg-slate-200"] { background-color: #e4e6df !important; }
+[class~="border-slate-100"], [class~="border-slate-200"] { border-color: var(--portal-line) !important; }
+[class~="text-slate-900"] { color: #192821 !important; }
+[class~="text-slate-800"] { color: #26372f !important; }
+[class~="text-slate-500"], [class~="text-slate-400"] { color: #738078 !important; }
+[class~="shadow-sm"] { box-shadow: 0 8px 28px rgba(22, 39, 31, .055) !important; }
+[class~="shadow-md"] { box-shadow: 0 14px 36px rgba(22, 39, 31, .10) !important; }
+[class~="rounded-3xl"] { border-radius: 1.5rem !important; }
+
+input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+  border-color: #dfe4dd;
+  background-color: #fbfbf8;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: #bc9435 !important;
+  box-shadow: 0 0 0 4px rgba(255, 214, 79, .2) !important;
+}
+table thead { background: #f3f4ef !important; }
+table tbody tr:hover { background: #faf9f4 !important; }
+button:disabled { transform: none !important; }
+button:not(:disabled):hover { filter: brightness(.98); }
+
+@media (max-width: 640px) {
+  nav { min-height: 66px; }
+  nav .h-16 { height: 66px; }
+  main { padding: .75rem !important; }
 }

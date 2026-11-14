@@ -1,5 +1,5 @@
 ﻿'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface FormData {
@@ -12,6 +12,8 @@ interface FormData {
   householdCategory: string;
   residentialAddress: string;
   personalStatement: string;
+  aadhaarNumber: string;
+  parentName: string;
   // Compulsory Document Uploads (*)
   sslcMarksCardUrl: string;
   pucMarksCardUrl: string;
@@ -33,6 +35,8 @@ export default function ApplyPage() {
     householdCategory: '',
     residentialAddress: '',
     personalStatement: '',
+    aadhaarNumber: '',
+    parentName: '',
     sslcMarksCardUrl: '',
     pucMarksCardUrl: '',
     marksCardUrl: '',
@@ -45,6 +49,16 @@ export default function ApplyPage() {
   const [validationWarnings, setValidationWarnings] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/student/application').then(async (res) => {
+      if (!res.ok) return;
+      const data = await res.json();
+      if (active && data.application) router.replace('/student/dashboard');
+    }).catch(() => undefined);
+    return () => { active = false; };
+  }, [router]);
 
   // Upload to internal route /api/upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, docKey: keyof FormData) => {
@@ -113,6 +127,8 @@ export default function ApplyPage() {
     if (!formData.householdCategory.trim()) errors.push('Household Category is required (*)');
     if (!formData.residentialAddress.trim()) errors.push('Residential Address is required (*)');
     if (!formData.personalStatement.trim()) errors.push('Personal Statement is required (*)');
+    if (!/^\d{12}$/.test(formData.aadhaarNumber)) errors.push('Aadhaar number must contain 12 digits.');
+    if (!formData.parentName.trim()) errors.push('Parent / Guardian name is required (*)');
 
     // Compulsory Documents Check
     const missingDocs = getMissingDocuments();
@@ -334,6 +350,18 @@ export default function ApplyPage() {
             <h2 className="text-xs font-black uppercase tracking-wider text-slate-800 border-b border-slate-100 pb-2">
               3. Financial Demographics & Fee Structure
             </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Parent / Guardian Full Name <span className="text-rose-500">*</span></label>
+                <input required maxLength={100} value={formData.parentName} onChange={(e) => setFormData({ ...formData, parentName: e.target.value })} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-amber-500" placeholder="Parent or guardian name" />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Aadhaar Number <span className="text-rose-500">*</span></label>
+                <input required inputMode="numeric" autoComplete="off" maxLength={12} value={formData.aadhaarNumber} onChange={(e) => setFormData({ ...formData, aadhaarNumber: e.target.value.replace(/\D/g, '').slice(0, 12) })} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-amber-500 font-mono tracking-widest" placeholder="12 digit number" />
+                <p className="text-[10px] text-slate-400 mt-1">Used only for scholarship identity verification.</p>
+              </div>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
               <div>

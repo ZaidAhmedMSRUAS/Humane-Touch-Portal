@@ -28,20 +28,11 @@ export async function GET() {
       return NextResponse.json({ error: 'User record not found.' }, { status: 404 });
     }
 
-    const isHeadVolunteerOrAdmin =
-      dbUser.role === UserRole.ADMIN ||
-      dbUser.phone === '9972533519' || // Nimra M (Head Volunteer)
-      dbUser.fullName?.toLowerCase().includes('nimra');
+    if (dbUser.role !== UserRole.VOLUNTEER && dbUser.role !== UserRole.ADMIN) {
+      return NextResponse.json({ error: 'Volunteer authorization required.' }, { status: 403 });
+    }
 
-    // Head volunteer / Admin sees all; regular volunteers see their assigned students
-    const whereClause = isHeadVolunteerOrAdmin
-      ? {}
-      : {
-          OR: [
-            { assignedVolunteerId: dbUser.id },
-            { assignedVolunteer: { phone: dbUser.phone } },
-          ],
-        };
+    const whereClause = dbUser.role === UserRole.ADMIN ? {} : { assignedVolunteerId: dbUser.id };
 
     const applications = await prisma.application.findMany({
       where: whereClause,

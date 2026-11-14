@@ -15,6 +15,8 @@ export async function POST(req: Request) {
 
     const userId = (session.user as any).id;
     const body = await req.json();
+    const existingApplication = await prisma.application.findFirst({ where: { studentId: userId } });
+    if (existingApplication) return NextResponse.json({ error: 'You already have an application. Track it from your dashboard.', applicationId: existingApplication.id }, { status: 409 });
 
     const missingDocs: string[] = [];
 

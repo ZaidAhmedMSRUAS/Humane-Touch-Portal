@@ -7,7 +7,7 @@ import { ApplicationStatus } from '@prisma/client';
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
+    if (!session?.user || (session.user as any).role !== 'VOLUNTEER') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -26,17 +26,12 @@ export async function POST(req: Request) {
     const payee = chequeInFavourOf.trim();
     const notes = volunteerRemarks?.trim() || remarks?.trim() || 'Documents verified in-person and Cheque Payee confirmed.';
 
-    // 1. Update Application status and Cheque Payee
-    const updatedApplication = await prisma.application.update({
-      where: { id: appId },
-      data: {
-        chequeInFavourOf: payee,
-        status: ApplicationStatus.DOC_VERIFICATION,
-      },
-    });
+    const assignedApplication = await prisma.application.findFirst({ where: { id: appId, assignedVolunteerId: volId, status: ApplicationStatus.DOC_VERIFICATION } });
+    if (!assignedApplication) return NextResponse.json({ error: 'This application is not assigned to you or is no longer awaiting verification.' }, { status: 403 });
 
     // 2. Upsert Verification Report with verified payee and volunteer remarks
-    await prisma.verificationReport.upsert({
+    const updatedApplication = await prisma.$transaction(async (tx) => {
+      await tx.verificationReport.upsert({
       where: { applicationId: appId },
       update: {
         volunteer: { connect: { id: volId } },
@@ -49,6 +44,8 @@ export async function POST(req: Request) {
         chequePayeeVerified: payee,
         volunteerRemarks: notes,
       },
+      });
+      return tx.application.update({ where: { id: appId }, data: { chequeInFavourOf: payee, status: ApplicationStatus.TRUSTEE_INTERVIEW } });
     });
 
     return NextResponse.json({

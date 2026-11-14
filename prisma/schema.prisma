@@ -18,6 +18,7 @@ enum ApplicationStatus {
   SUBMITTED
   DOC_VERIFICATION
   TRUSTEE_INTERVIEW
+  ADMIN_FINALIZATION
   APPROVED
   REJECTED
 }
@@ -78,6 +79,8 @@ model Application {
   householdCategory          String
   residentialAddress         String
   personalStatement          String
+  aadhaarNumber              String?
+  parentName                 String?
   sslcMarksCardUrl      String?
   pucMarksCardUrl       String?
   marksCardUrl      String?

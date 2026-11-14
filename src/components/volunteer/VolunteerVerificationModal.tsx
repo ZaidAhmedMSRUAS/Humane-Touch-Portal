@@ -116,6 +116,10 @@ export default function VolunteerVerificationModal({ app, onClose, onSuccess }: 
               <p className="text-slate-600">{app.personalStatement}</p>
             </div>
           )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="p-3 bg-white rounded-xl border border-slate-200"><strong className="text-slate-900 block mb-0.5">Parent / Guardian</strong><span className="text-slate-600">{app.parentName || 'Not provided'}</span></div>
+            <div className="p-3 bg-white rounded-xl border border-slate-200"><strong className="text-slate-900 block mb-0.5">Aadhaar number</strong><span className="font-mono text-slate-600">{app.aadhaarNumber ? `•••• •••• ${app.aadhaarNumber.slice(-4)}` : 'Not provided'}</span></div>
+          </div>
         </div>
 
         {/* Uploaded Documents Scrutiny Grid */}

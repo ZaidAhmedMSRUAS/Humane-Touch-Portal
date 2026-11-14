@@ -22,6 +22,9 @@ export async function POST(req: Request) {
       isRecommended,
     } = await req.json();
 
+    const assignedApplication = await prisma.application.findFirst({ where: { id: applicationId, assignedVolunteerId: volunteerId, status: ApplicationStatus.DOC_VERIFICATION } });
+    if (!assignedApplication) return NextResponse.json({ error: 'This application is not assigned to you or is no longer awaiting verification.' }, { status: 403 });
+
     if (!applicationId || !chequePayeeVerified || !volunteerRemarks) {
       return NextResponse.json(
         { error: 'Application ID, Cheque Payee Name, and Volunteer Remarks are mandatory.' },

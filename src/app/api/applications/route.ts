@@ -7,56 +7,21 @@ import { generateApplicationRefNumber } from '@/lib/refGenerator';
 import { sanitizeAmount, sanitizeMarks, sanitizeText } from '@/lib/validation';
 import { ApplicationStatus } from '@prisma/client';
 
+export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return NextResponse.json({ error: 'Please log in.' }, { status: 401 });
+  const applications = await prisma.application.findMany({ where: { studentId: (session.user as any).id }, orderBy: { createdAt: 'desc' } });
+  return NextResponse.json(applications);
+}
+
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
     const session = await getServerSession(authOptions);
-
-    let userId = (session?.user as any)?.id;
-    if (!userId && session?.user) {
-      const email = session.user.email;
-      const dbUser = await prisma.user.findFirst({
-        where: {
-          OR: [
-            ...(email ? [{ email }] : []),
-            ...(session.user.name ? [{ fullName: session.user.name }] : []),
-          ],
-        },
-      });
-      if (dbUser) userId = dbUser.id;
-    }
-
-    // If no existing session, register or find the student account from the form submission
-    if (!userId) {
-      const rawPhone = body.phone || body.mobileNumber || body.studentPhone || body.mobile || body.registeredPhone;
-      const phone = rawPhone ? String(rawPhone).trim() : null;
-      const fullName = (body.fullName || body.studentName || body.name || 'Student Applicant').trim();
-
-      if (!phone) {
-        return NextResponse.json(
-          { error: 'Mobile number is required to submit a student application.' },
-          { status: 400 }
-        );
-      }
-
-      let student = await prisma.user.findFirst({
-        where: { phone },
-      });
-
-      if (!student) {
-        const hashedPassword = await bcrypt.hash(phone, 10);
-        student = await prisma.user.create({
-          data: {
-            fullName,
-            phone,
-            passwordHash: hashedPassword,
-            role: 'STUDENT',
-          },
-        });
-      }
-
-      userId = student.id;
-    }
+    if (!session?.user) return NextResponse.json({ error: 'Please log in as a student to apply.' }, { status: 401 });
+    const userId = (session.user as any).id;
+    const body = await req.json();
+    const existingApplication = await prisma.application.findFirst({ where: { studentId: userId } });
+    if (existingApplication) return NextResponse.json({ error: 'You already have an application. Track it from your dashboard.', applicationId: existingApplication.id }, { status: 409 });
 
     const missingDocs: string[] = [];
     const isValidDoc = (val: any) =>
@@ -92,6 +57,7 @@ export async function POST(req: Request) {
       !body.courseName ||
       !body.currentYearOfStudy ||
       !body.householdCategory ||
+      !body.parentName?.trim() ||
       !body.residentialAddress ||
       !body.personalStatement
     ) {
@@ -100,6 +66,9 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+
+    const aadhaarNumber = String(body.aadhaarNumber || '').replace(/\s/g, '');
+    if (!/^\d{12}$/.test(aadhaarNumber)) return NextResponse.json({ error: 'Aadhaar number must contain 12 digits.' }, { status: 400 });
 
     const refNumber = await generateApplicationRefNumber(body.courseName);
 
@@ -112,6 +81,8 @@ export async function POST(req: Request) {
         currentYearOfStudy: sanitizeText(body.currentYearOfStudy),
         residentialAddress: sanitizeText(body.residentialAddress, 500),
         personalStatement: sanitizeText(body.personalStatement, 2000),
+        aadhaarNumber,
+        parentName: sanitizeText(body.parentName, 100),
         previousScoreMarks: sanitizeMarks(body.previousScoreMarks),
         familyAnnualIncome: sanitizeAmount(body.familyAnnualIncome),
         annualTuitionFee: sanitizeAmount(body.annualTuitionFee),

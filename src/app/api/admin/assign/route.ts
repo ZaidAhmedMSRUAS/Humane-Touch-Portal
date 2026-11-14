@@ -17,12 +17,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Application ID and Volunteer ID are required.' }, { status: 400 });
     }
 
-    const updatedApp = await prisma.application.update({
-      where: { id: applicationId },
-      data: {
-        assignedVolunteerId: volunteerId,
-        status: ApplicationStatus.DOC_VERIFICATION,
-      },
+    const [application, volunteer] = await Promise.all([
+      prisma.application.findUnique({ where: { id: applicationId } }),
+      prisma.user.findFirst({ where: { id: volunteerId, role: 'VOLUNTEER', isActive: true } }),
+    ]);
+    if (!application) return NextResponse.json({ error: 'Application not found.' }, { status: 404 });
+    if (!volunteer) return NextResponse.json({ error: 'Select an active volunteer account.' }, { status: 400 });
+    if (application.assignedVolunteerId && application.assignedVolunteerId !== volunteerId) return NextResponse.json({ error: 'This application is already assigned. Only the assigned volunteer can work on it.' }, { status: 409 });
+    if (application.status !== ApplicationStatus.SUBMITTED && application.assignedVolunteerId !== volunteerId) return NextResponse.json({ error: 'Volunteer assignment is closed after verification begins.' }, { status: 409 });
+
+    const updatedApp = await prisma.application.update({ where: { id: applicationId }, data: {
+      assignedVolunteerId: volunteerId,
+      status: ApplicationStatus.DOC_VERIFICATION,
+    },
       include: {
         assignedVolunteer: {
           select: { id: true, fullName: true, phone: true },

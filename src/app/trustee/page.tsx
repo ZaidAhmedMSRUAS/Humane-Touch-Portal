@@ -7,6 +7,8 @@ import TrusteeInterviewModal from '@/components/trustee/TrusteeInterviewModal';
 export default function TrusteeDashboardPage() {
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [statistics, setStatistics] = useState({ registeredCandidates: 0, approvedScholars: 0, sanctionedGrants: 0 });
 
   // Modals state
   const [infoModalApp, setInfoModalApp] = useState<any | null>(null);
@@ -21,9 +23,14 @@ export default function TrusteeDashboardPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         setApplications(data.applications || []);
+        setStatistics(data.statistics || { registeredCandidates: data.applications?.length || 0, approvedScholars: 0, sanctionedGrants: 0 });
+        setLoadError('');
+      } else {
+        setLoadError(data.error || 'Could not load trustee dashboard data.');
       }
     } catch (err) {
       console.error('Error fetching applications for trustees:', err);
+      setLoadError('Could not connect to the trustee service. Please refresh and try again.');
     } finally {
       setLoading(false);
     }
@@ -33,8 +40,8 @@ export default function TrusteeDashboardPage() {
     fetchApplications();
   }, []);
 
-  const totalSanctioned = applications.reduce((acc, app) => acc + (app.sanctionedAmount || 0), 0);
-  const totalApproved = applications.filter((app) => app.status === 'APPROVED').length;
+  const totalSanctioned = statistics.sanctionedGrants;
+  const totalApproved = statistics.approvedScholars;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -59,10 +66,11 @@ export default function TrusteeDashboardPage() {
       </div>
 
       {/* KPI Cards */}
+      {loadError && <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800">{loadError}</div>}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
           <p className="text-xs font-bold text-slate-500 uppercase">Registered Candidates</p>
-          <p className="text-2xl font-black text-slate-900 mt-1">{applications.length}</p>
+          <p className="text-2xl font-black text-slate-900 mt-1">{statistics.registeredCandidates}</p>
         </div>
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
           <p className="text-xs font-bold text-slate-500 uppercase">Sanctioned Grants</p>
@@ -218,6 +226,8 @@ export default function TrusteeDashboardPage() {
               <div className="bg-slate-50 p-3 rounded-xl"><strong>Annual Income:</strong> ₹{infoModalApp.familyAnnualIncome?.toLocaleString('en-IN')}</div>
               <div className="bg-slate-50 p-3 rounded-xl"><strong>Tuition Fee:</strong> ₹{infoModalApp.annualTuitionFee?.toLocaleString('en-IN')}</div>
               <div className="bg-slate-50 p-3 rounded-xl"><strong>Household Category:</strong> {infoModalApp.householdCategory}</div>
+              <div className="bg-slate-50 p-3 rounded-xl"><strong>Parent / Guardian:</strong> {infoModalApp.parentName || '—'}</div>
+              <div className="bg-slate-50 p-3 rounded-xl"><strong>Aadhaar:</strong> {infoModalApp.aadhaarNumber ? `•••• •••• ${infoModalApp.aadhaarNumber.slice(-4)}` : '—'}</div>
             </div>
 
             {infoModalApp.residentialAddress && (
@@ -231,6 +241,14 @@ export default function TrusteeDashboardPage() {
                 <strong>Personal Statement:</strong> {infoModalApp.personalStatement}
               </div>
             )}
+
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <h4 className="mb-3 text-xs font-black uppercase tracking-wider text-slate-700">Uploaded documents</h4>
+              <div className="flex flex-wrap gap-2">
+                {([['SSLC marks card', infoModalApp.sslcMarksCardUrl], ['PUC marks card', infoModalApp.pucMarksCardUrl], ['Previous marks card', infoModalApp.marksCardUrl], ['Income certificate', infoModalApp.incomeCertUrl], ['Fee demand note', infoModalApp.feeDemandUrl], ['Student ID proof', infoModalApp.idProofUrl]] as [string, string | null][]).filter(([, url]) => !!url).map(([label, url]) => <a key={label} href={url!} target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-bold text-emerald-800 hover:bg-emerald-50">{label} ↗</a>)}
+                {!infoModalApp.idProofUrl && !infoModalApp.marksCardUrl && <span className="text-xs text-slate-500">No documents were saved on this application.</span>}
+              </div>
+            </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
               <button
