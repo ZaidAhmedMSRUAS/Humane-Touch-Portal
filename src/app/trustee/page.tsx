@@ -1,11 +1,21 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import CertificateModal from '@/components/documents/CertificateModal';
 import AwardLetterModal from '@/components/documents/AwardLetterModal';
 import TrusteeInterviewModal from '@/components/trustee/TrusteeInterviewModal';
+import { isSecretaryAccount } from '@/lib/secretaryAccess';
 
 export default function TrusteeDashboardPage() {
+  const { data: session } = useSession();
+  const isSecretary = isSecretaryAccount(session?.user);
   const [applications, setApplications] = useState<any[]>([]);
+  const [allApplications, setAllApplications] = useState<any[]>([]);
+  const [allApplicationsLoading, setAllApplicationsLoading] = useState(false);
+  const [allApplicationsError, setAllApplicationsError] = useState('');
+  const [allApplicationsYear, setAllApplicationsYear] = useState('');
+  const [allApplicationsSearch, setAllApplicationsSearch] = useState('');
+  const [allApplicationsStatus, setAllApplicationsStatus] = useState('');
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [statistics, setStatistics] = useState({ registeredCandidates: 0, approvedScholars: 0, sanctionedGrants: 0 });
@@ -36,9 +46,39 @@ export default function TrusteeDashboardPage() {
     }
   };
 
+  const fetchAllApplications = async () => {
+    setAllApplicationsLoading(true);
+    setAllApplicationsError('');
+    try {
+      const res = await fetch('/api/secretary/applications');
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Could not load all applications.');
+      setAllApplications(data.applications || []);
+    } catch (error: any) {
+      setAllApplicationsError(error.message || 'Could not load all applications.');
+    } finally {
+      setAllApplicationsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchApplications();
   }, []);
+
+  useEffect(() => {
+    if (!isSecretary) return;
+    fetchAllApplications();
+  }, [isSecretary]);
+
+  const applicationYears = [...new Set(allApplications.map((app) => app.academicYear).filter(Boolean))].sort().reverse();
+  const visibleAllApplications = allApplications.filter((app) => {
+    const matchesYear = !allApplicationsYear || (allApplicationsYear === '__unassigned__' ? !app.academicYear : app.academicYear === allApplicationsYear);
+    const search = allApplicationsSearch.trim().toLowerCase();
+    const matchesSearch = !search || [app.referenceNumber, app.student?.fullName, app.student?.phone, app.courseName, app.collegeName]
+      .some((value) => String(value || '').toLowerCase().includes(search));
+    const matchesStatus = !allApplicationsStatus || app.status === allApplicationsStatus;
+    return matchesYear && matchesSearch && matchesStatus;
+  });
 
   const totalSanctioned = statistics.sanctionedGrants;
   const totalApproved = statistics.approvedScholars;
@@ -57,6 +97,7 @@ export default function TrusteeDashboardPage() {
             Conduct in-person candidate interviews, record scoring observations, and sanction scholarship grants
           </p>
         </div>
+        {isSecretary && <a href="#all-applications" className="px-4 py-2 bg-white/10 hover:bg-white/15 border border-white/15 text-white font-bold text-xs rounded-xl transition">All Applications</a>}
         <button
           onClick={fetchApplications}
           className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl shadow transition cursor-pointer"
@@ -195,6 +236,67 @@ export default function TrusteeDashboardPage() {
           </div>
         )}
       </div>
+
+      {isSecretary && (
+        <section id="all-applications" className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-3 mb-4">
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-amber-700">Secretary access · Read only</span>
+              <h2 className="text-base font-black text-slate-900 mt-1">All Scholarship Applications</h2>
+              <p className="text-xs text-slate-500 mt-1">{visibleAllApplications.length} shown of {allApplications.length} total applications</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+              <button onClick={fetchAllApplications} className="p-2 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-lg text-xs font-bold">Refresh list</button>
+              <select aria-label="Filter secretary view by academic year" value={allApplicationsYear} onChange={(e) => setAllApplicationsYear(e.target.value)} className="p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold">
+                <option value="">All academic years</option>
+                {applicationYears.map((year) => <option key={year} value={year}>{year}</option>)}
+                {allApplications.some((app) => !app.academicYear) && <option value="__unassigned__">Year not assigned</option>}
+              </select>
+              <select aria-label="Filter secretary view by status" value={allApplicationsStatus} onChange={(e) => setAllApplicationsStatus(e.target.value)} className="p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold">
+                <option value="">All statuses</option>
+                {[...new Set(allApplications.map((app) => app.status))].sort().map((status) => <option key={status} value={status}>{status.replaceAll('_', ' ')}</option>)}
+              </select>
+              <input aria-label="Search all applications" value={allApplicationsSearch} onChange={(e) => setAllApplicationsSearch(e.target.value)} placeholder="Search name, ref, college" className="p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs" />
+            </div>
+          </div>
+
+          {allApplicationsError && <p role="alert" className="mb-3 rounded-xl bg-rose-50 border border-rose-200 p-3 text-xs font-semibold text-rose-800">{allApplicationsError}</p>}
+          {allApplicationsLoading ? (
+            <p className="text-xs text-slate-400 py-8 text-center">Loading all applications...</p>
+          ) : visibleAllApplications.length === 0 ? (
+            <p className="text-xs text-slate-500 py-8 text-center">No applications match these filters.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold">
+                  <tr>
+                    <th className="py-3 px-3">Academic Year</th>
+                    <th className="py-3 px-3">Ref ID</th>
+                    <th className="py-3 px-3">Scholar</th>
+                    <th className="py-3 px-3">Course & College</th>
+                    <th className="py-3 px-3">Grant</th>
+                    <th className="py-3 px-3">Status</th>
+                    <th className="py-3 px-3 text-right">Dossier</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {visibleAllApplications.map((app) => (
+                    <tr key={app.id} className="hover:bg-slate-50/60">
+                      <td className="py-3 px-3 font-semibold text-slate-600">{app.academicYear || 'Unassigned'}</td>
+                      <td className="py-3 px-3 font-mono font-bold text-amber-800">{app.referenceNumber || 'N/A'}</td>
+                      <td className="py-3 px-3"><div className="font-bold text-slate-900">{app.student?.fullName || app.studentName}</div><div className="text-[11px] text-slate-400">{app.student?.phone || app.studentPhone}</div></td>
+                      <td className="py-3 px-3"><div className="font-semibold text-slate-800">{app.courseName}</div><div className="text-[11px] text-slate-400">{app.collegeName}</div></td>
+                      <td className="py-3 px-3 font-mono font-bold text-emerald-800">{app.sanctionedAmount ? `₹${app.sanctionedAmount.toLocaleString('en-IN')}` : '—'}</td>
+                      <td className="py-3 px-3"><span className="px-2 py-0.5 font-bold rounded text-[10px] border bg-slate-50 text-slate-700 border-slate-200">{app.status}</span></td>
+                      <td className="py-3 px-3 text-right"><button onClick={() => setInfoModalApp(app)} className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg text-[11px]">View dossier</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* 1. TRUSTEE IN-PERSON INTERVIEW MODAL */}
       {interviewModalApp && (

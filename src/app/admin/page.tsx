@@ -13,6 +13,9 @@ export default function AdminDashboardPage() {
   const [volunteers, setVolunteers] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState('');
+  const [applicationSearch, setApplicationSearch] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('');
 
   // Modals state
   const [infoModalApp, setInfoModalApp] = useState<any | null>(null);
@@ -51,6 +54,58 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     fetchAdminData();
   }, []);
+
+  const academicYears = [...new Set(applications.map((app) => app.academicYear).filter(Boolean))].sort().reverse();
+  const visibleApplications = applications.filter((app) => {
+    const matchesYear = !selectedAcademicYear || (selectedAcademicYear === '__unassigned__' ? !app.academicYear : app.academicYear === selectedAcademicYear);
+    const search = applicationSearch.trim().toLowerCase();
+    const matchesSearch = !search || [app.referenceNumber, app.student?.fullName, app.student?.phone, app.courseName, app.collegeName]
+      .some((value) => String(value || '').toLowerCase().includes(search));
+    const matchesStatus = !selectedStatus || app.status === selectedStatus;
+    return matchesYear && matchesSearch && matchesStatus;
+  });
+
+  const downloadApplicationsCsv = () => {
+    const columns: { label: string; value: (app: any) => unknown }[] = [
+      { label: 'Reference ID', value: (app) => app.referenceNumber },
+      { label: 'Academic Year', value: (app) => app.academicYear },
+      { label: 'Student Name', value: (app) => app.student?.fullName || app.studentName },
+      { label: 'Phone', value: (app) => app.student?.phone || app.studentPhone },
+      { label: 'Email', value: (app) => app.student?.email },
+      { label: 'Course', value: (app) => app.courseName },
+      { label: 'College', value: (app) => app.collegeName },
+      { label: 'Current Study Year', value: (app) => app.currentYearOfStudy },
+      { label: 'Previous Score (%)', value: (app) => app.previousScoreMarks },
+      { label: 'Parent / Guardian', value: (app) => app.parentName },
+      { label: 'Household Category', value: (app) => app.householdCategory },
+      { label: 'Family Annual Income', value: (app) => app.familyAnnualIncome },
+      { label: 'Application Status', value: (app) => app.status },
+      { label: 'Cheque Payee', value: (app) => app.chequeInFavourOf },
+      { label: 'Cheque Number', value: (app) => app.chequeNumber },
+      { label: 'Annual Tuition Fee', value: (app) => app.annualTuitionFee },
+      { label: 'Sanctioned Grant', value: (app) => app.sanctionedAmount },
+      { label: 'Assigned Volunteer', value: (app) => app.assignedVolunteer?.fullName },
+      { label: 'Submitted At', value: (app) => app.createdAt ? new Date(app.createdAt).toISOString() : '' },
+    ];
+    const escapeCell = (value: unknown) => {
+      let text = String(value ?? '').replace(/[\r\n]+/g, ' ');
+      if (/^[=+\-@\t]/.test(text)) text = `'${text}`;
+      return `"${text.replace(/"/g, '""')}"`;
+    };
+    const csv = [
+      columns.map((column) => escapeCell(column.label)).join(','),
+      ...visibleApplications.map((app) => columns.map((column) => escapeCell(column.value(app))).join(',')),
+    ].join('\r\n');
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `applications-${(selectedAcademicYear || 'all-years').replace(/[^a-zA-Z0-9-]/g, '')}-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
 
   const handleAssignVolunteer = async (applicationId: string, volunteerId: string) => {
     try {
@@ -221,10 +276,36 @@ export default function AdminDashboardPage() {
       {/* Applications & Documents List */}
       {activeTab === 'applications' && (
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
-          <h3 className="text-base font-black text-slate-900 mb-4">Scholarship Applications, Editing & Disbursals</h3>
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-3 mb-4">
+            <div>
+              <h3 className="text-base font-black text-slate-900">Scholarship Applications, Editing & Disbursals</h3>
+              <p className="text-xs text-slate-500 mt-1">Showing {visibleApplications.length} of {applications.length} applications</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+              <button
+                type="button"
+                onClick={downloadApplicationsCsv}
+                disabled={loading || visibleApplications.length === 0}
+                className="p-2 bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-300 text-white rounded-lg text-xs font-bold disabled:cursor-not-allowed"
+                title="Download the filtered applications as a CSV for admin use"
+              >
+                Download CSV
+              </button>
+              <select aria-label="Filter by academic year" value={selectedAcademicYear} onChange={(e) => setSelectedAcademicYear(e.target.value)} className="p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold">
+                <option value="">All academic years</option>
+                {academicYears.map((year) => <option key={year} value={year}>{year}</option>)}
+                {applications.some((app) => !app.academicYear) && <option value="__unassigned__">Year not assigned</option>}
+              </select>
+              <select aria-label="Filter by application status" value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold">
+                <option value="">All statuses</option>
+                {[...new Set(applications.map((app) => app.status))].sort().map((status) => <option key={status} value={status}>{status.replaceAll('_', ' ')}</option>)}
+              </select>
+              <input aria-label="Search applications" value={applicationSearch} onChange={(e) => setApplicationSearch(e.target.value)} placeholder="Search name, ref, college" className="p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs" />
+            </div>
+          </div>
           {loading ? (
             <p className="text-xs text-slate-400 py-8 text-center">Loading applications...</p>
-          ) : applications.length === 0 ? (
+          ) : visibleApplications.length === 0 ? (
             <p className="text-xs text-slate-500 py-8 text-center">No applications found.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -232,6 +313,7 @@ export default function AdminDashboardPage() {
                 <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold">
                   <tr>
                     <th className="py-3 px-3">Ref ID</th>
+                    <th className="py-3 px-3">Year</th>
                     <th className="py-3 px-3">Student</th>
                     <th className="py-3 px-3">Course & College</th>
                     <th className="py-3 px-3">Volunteer</th>
@@ -241,12 +323,13 @@ export default function AdminDashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {applications.map((app) => {
+                  {visibleApplications.map((app) => {
                     const isApproved = app.status === 'APPROVED';
 
                     return (
                       <tr key={app.id} className="hover:bg-slate-50/60 transition">
                         <td className="py-3 px-3 font-mono font-bold text-amber-800">{app.referenceNumber || 'N/A'}</td>
+                        <td className="py-3 px-3 font-semibold text-slate-600">{app.academicYear || 'Unassigned'}</td>
                         <td className="py-3 px-3">
                           <div className="font-bold text-slate-900">{app.student?.fullName}</div>
                           <div className="text-[11px] text-slate-400">{app.student?.phone}</div>

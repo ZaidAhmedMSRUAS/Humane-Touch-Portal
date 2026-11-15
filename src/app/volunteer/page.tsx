@@ -7,6 +7,7 @@ import VolunteerVerificationModal from '@/components/volunteer/VolunteerVerifica
 export default function VolunteerDashboardPage() {
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Modals state
   const [selectedAppForVerification, setSelectedAppForVerification] = useState<any | null>(null);
@@ -30,6 +31,22 @@ export default function VolunteerDashboardPage() {
   useEffect(() => {
     fetchApplications();
   }, []);
+
+  const visibleApplications = applications.filter((app) => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return true;
+    return [
+      app.referenceNumber,
+      app.academicYear,
+      app.student?.fullName || app.studentName,
+      app.student?.phone || app.studentPhone,
+      app.student?.email,
+      app.courseName,
+      app.collegeName,
+      app.chequeInFavourOf,
+      app.status,
+    ].some((value) => String(value || '').toLowerCase().includes(query));
+  });
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -55,15 +72,32 @@ export default function VolunteerDashboardPage() {
 
       {/* Applications List Table */}
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
-        <h2 className="text-base font-black text-slate-900 mb-4">
-          Allotted Student Applications ({applications.length})
-        </h2>
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-4">
+          <div>
+            <h2 className="text-base font-black text-slate-900">Allotted Student Applications</h2>
+            <p className="text-xs text-slate-500 mt-1">Showing {visibleApplications.length} of {applications.length} assigned applications</p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="search"
+              aria-label="Search assigned student applications"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search name, phone, ref, course..."
+              className="min-w-64 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-amber-300"
+            />
+          </div>
+        </div>
         
         {loading ? (
           <p className="text-xs text-slate-400 py-8 text-center">Loading assigned applications...</p>
         ) : applications.length === 0 ? (
           <div className="py-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
             <p className="text-xs font-bold text-slate-500">No student applications allotted to you at the moment.</p>
+          </div>
+        ) : visibleApplications.length === 0 ? (
+          <div className="py-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+            <p className="text-xs font-bold text-slate-500">No assigned applications match “{searchQuery}”.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -79,7 +113,7 @@ export default function VolunteerDashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {applications.map((app) => (
+                {visibleApplications.map((app) => (
                   <tr key={app.id} className="hover:bg-slate-50/60 transition">
                     <td className="py-3.5 px-3 font-mono font-bold text-amber-800">
                       {app.referenceNumber || 'N/A'}

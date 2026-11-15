@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { generateApplicationRefNumber } from '@/lib/refGenerator';
 import { sanitizeAmount, sanitizeMarks, sanitizeText } from '@/lib/validation';
 import { ApplicationStatus } from '@prisma/client';
+import { academicYearForReference, getCurrentAcademicYear } from '@/lib/academicYear';
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -20,8 +21,9 @@ export async function POST(req: Request) {
     if (!session?.user) return NextResponse.json({ error: 'Please log in as a student to apply.' }, { status: 401 });
     const userId = (session.user as any).id;
     const body = await req.json();
-    const existingApplication = await prisma.application.findFirst({ where: { studentId: userId } });
-    if (existingApplication) return NextResponse.json({ error: 'You already have an application. Track it from your dashboard.', applicationId: existingApplication.id }, { status: 409 });
+    const academicYear = getCurrentAcademicYear();
+    const existingApplication = await prisma.application.findFirst({ where: { studentId: userId, academicYear } });
+    if (existingApplication) return NextResponse.json({ error: `You already have an application for ${academicYear}. Track it from your dashboard.`, applicationId: existingApplication.id }, { status: 409 });
 
     const missingDocs: string[] = [];
     const isValidDoc = (val: any) =>
@@ -70,12 +72,13 @@ export async function POST(req: Request) {
     const aadhaarNumber = String(body.aadhaarNumber || '').replace(/\s/g, '');
     if (!/^\d{12}$/.test(aadhaarNumber)) return NextResponse.json({ error: 'Aadhaar number must contain 12 digits.' }, { status: 400 });
 
-    const refNumber = await generateApplicationRefNumber(body.courseName);
+    const refNumber = await generateApplicationRefNumber(body.courseName, academicYearForReference(academicYear));
 
     const application = await prisma.application.create({
       data: {
         student: { connect: { id: userId } },
         referenceNumber: refNumber,
+        academicYear,
         collegeName: sanitizeText(body.collegeName),
         courseName: sanitizeText(body.courseName),
         currentYearOfStudy: sanitizeText(body.currentYearOfStudy),

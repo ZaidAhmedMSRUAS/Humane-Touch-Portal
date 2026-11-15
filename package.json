@@ -3,10 +3,12 @@
     "version": "1.0.0",
     "private": true,
     "scripts": {
+        "predev": "prisma generate",
         "dev": "next dev",
         "build": "prisma generate && next build",
         "start": "next start",
         "lint": "next lint",
+        "db:academic-year": "prisma db execute --file prisma/migrations/20261115000000_add_academic_year/migration.sql --schema prisma/schema.prisma",
         "db:push": "prisma db push",
         "db:studio": "prisma studio",
         "db:seed": "ts-node prisma/seed.ts"

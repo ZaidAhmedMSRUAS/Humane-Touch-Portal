@@ -64,6 +64,7 @@ model OtpVerification {
 model Application {
   id                         String                @id @default(cuid())
   referenceNumber            String?               @unique
+  academicYear               String?
   studentId                  String
   student                    User                  @relation("StudentApplications", fields: [studentId], references: [id])
   

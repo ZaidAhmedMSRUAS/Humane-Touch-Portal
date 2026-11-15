@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { generateApplicationRefNumber } from '@/lib/refGenerator';
 import { sanitizeAmount, sanitizeMarks, sanitizeText } from '@/lib/validation';
 import { ApplicationStatus } from '@prisma/client';
+import { academicYearForReference, getCurrentAcademicYear } from '@/lib/academicYear';
 
 export async function POST(req: Request) {
   try {
@@ -15,8 +16,9 @@ export async function POST(req: Request) {
 
     const userId = (session.user as any).id;
     const body = await req.json();
-    const existingApplication = await prisma.application.findFirst({ where: { studentId: userId } });
-    if (existingApplication) return NextResponse.json({ error: 'You already have an application. Track it from your dashboard.', applicationId: existingApplication.id }, { status: 409 });
+    const academicYear = getCurrentAcademicYear();
+    const existingApplication = await prisma.application.findFirst({ where: { studentId: userId, academicYear } });
+    if (existingApplication) return NextResponse.json({ error: `You already have an application for ${academicYear}. Track it from your dashboard.`, applicationId: existingApplication.id }, { status: 409 });
 
     const missingDocs: string[] = [];
 
@@ -42,12 +44,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'All asterisk (*) questions must be filled.' }, { status: 400 });
     }
 
-    const refNumber = await generateApplicationRefNumber(body.courseName);
+    const refNumber = await generateApplicationRefNumber(body.courseName, academicYearForReference(academicYear));
 
     const application = await prisma.application.create({
       data: {
         student: { connect: { id: userId } },
         referenceNumber: refNumber,
+        academicYear,
         collegeName: sanitizeText(body.collegeName),
         courseName: sanitizeText(body.courseName),
         currentYearOfStudy: sanitizeText(body.currentYearOfStudy),

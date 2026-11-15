@@ -6,11 +6,13 @@ import { sanitizePhoneNumber, sanitizeAmount, sanitizeMarks, sanitizeText } from
 
 export async function POST(req: Request) {
   try {
-    const { academicYear, records } = await req.json();
+    const body = await req.json();
+    const academicYear = String(body.academicYear || '').trim();
+    const records = body.records;
 
-    if (!academicYear || !Array.isArray(records) || records.length === 0) {
+    if (!/^20\d{2}-20\d{2}$/.test(academicYear) || !Array.isArray(records) || records.length === 0) {
       return NextResponse.json(
-        { error: 'Academic Year and a valid records list are required.' },
+        { error: 'Enter an academic year in YYYY-YYYY format and provide at least one record.' },
         { status: 400 }
       );
     }
@@ -69,6 +71,7 @@ export async function POST(req: Request) {
           connect: { id: student.id },
         },
         referenceNumber: refNumber,
+        academicYear,
         courseName: course,
         collegeName: college,
         currentYearOfStudy: sanitizeText(row.yearOfStudy || 'Final Year'),

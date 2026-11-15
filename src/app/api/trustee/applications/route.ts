@@ -41,7 +41,10 @@ export async function GET() {
       }),
       prisma.application.count(),
       prisma.application.count({ where: { status: 'APPROVED' } }),
-      prisma.application.aggregate({ where: { status: 'APPROVED' }, _sum: { sanctionedAmount: true } }),
+      // A trustee records the grant when moving an application to
+      // ADMIN_FINALIZATION. Include those sanctioned amounts immediately;
+      // final approval is tracked separately by approvedScholars below.
+      prisma.application.aggregate({ where: { sanctionedAmount: { gt: 0 } }, _sum: { sanctionedAmount: true } }),
     ]);
 
     return NextResponse.json({
