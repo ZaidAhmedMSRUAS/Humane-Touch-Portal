@@ -8,7 +8,7 @@ export default function AdminDocumentView({ application }: { application: any })
     usn: application.student.usn,
     collegeName: application.student.college,
     course: application.student.course,
-    academicYear: application.academicYear || "2026-2027",
+    academicYear: application.academicYear || "2027-2028",
     scholarshipScheme: application.schemeName || "Higher Education Scholarship",
     awardedDate: new Date(application.approvedAt || Date.now()).toLocaleDateString("en-IN", {
       day: "numeric",
@@ -29,7 +29,7 @@ export default function AdminDocumentView({ application }: { application: any })
     usn: application.student.usn,
     course: application.student.course,
     collegeName: application.student.college,
-    academicYear: application.academicYear || "2026-2027",
+    academicYear: application.academicYear || "2027-2028",
     sanctionedAmount: application.amountSanctioned || 25000,
     paymentMode: "Direct College Fee Transfer",
     trusteeSignatoryName: "Managing Trustee",

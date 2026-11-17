@@ -61,7 +61,7 @@ export default function StudentDashboardPage() {
         <div className="bg-white p-8 rounded-3xl border border-slate-200 text-center space-y-4 shadow-sm">
           <h2 className="text-base font-black text-slate-900">No Application Found</h2>
           <p className="text-xs text-slate-500 max-w-md mx-auto">
-            You have not submitted an application for the 2026-27 Udaan Scholarship cycle yet.
+            You have not submitted an application for the 2027-28 Udaan Scholarship cycle yet.
           </p>
           <Link
             href="/student/apply"
