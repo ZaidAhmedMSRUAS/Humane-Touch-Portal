@@ -1,5 +1,6 @@
 'use client';
 import React, { useState } from 'react';
+import { academicYearForReference } from '@/lib/academicYear';
 
 interface CertificateProps {
   application: any;
@@ -14,7 +15,8 @@ export default function CertificatePDF({ application, onClose }: CertificateProp
   const courseName = application?.courseName || application?.course || 'B.Tech.';
   const yearOfStudy = application?.currentYearOfStudy || '3rd Year';
   const collegeName = application?.collegeName || application?.college || 'Bengaluru University / Institution';
-  const refNumber = application?.referenceNumber || `HT/26-27/${application?.id ? application.id.slice(0, 4).toUpperCase() : '0001'}`;
+  const academicYear = academicYearForReference(application?.academicYear || '2027-2028').replace('-', '–');
+  const refNumber = application?.referenceNumber || `HT/${academicYear.replace('–', '-')}/${application?.id ? application.id.slice(0, 4).toUpperCase() : '0001'}`;
 
   // Formatted date generator
   const getFormattedDate = () => {
@@ -208,7 +210,7 @@ export default function CertificatePDF({ application, onClose }: CertificateProp
                     <div className="flex items-center justify-center space-x-3">
                       <div className="w-16 h-[1.5px] bg-gradient-to-r from-transparent to-amber-500"></div>
                       <span className="text-[11px] font-bold text-amber-800 tracking-[0.2em] uppercase font-sans">
-                        UDAAN SCHOLARSHIP 2026–27
+                        UDAAN SCHOLARSHIP {academicYear}
                       </span>
                       <div className="w-16 h-[1.5px] bg-gradient-to-l from-transparent to-amber-500"></div>
                     </div>

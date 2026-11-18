@@ -1,5 +1,6 @@
 import CertificateModal from "@/components/documents/CertificateModal";
 import AwardLetterTemplate from "@/components/documents/AwardLetterModal";
+import { academicYearForReference } from "@/lib/academicYear";
 
 export default function AdminDocumentView({ application }: { application: any }) {
   const certificateData = {
@@ -19,7 +20,7 @@ export default function AdminDocumentView({ application }: { application: any })
   };
 
   const awardLetterData = {
-    referenceNumber: `HT/AW/${application.academicYear?.replace("-", "")}/${application.id}`,
+    referenceNumber: application.referenceNumber || `HT/${academicYearForReference(application.academicYear || "2027-2028")}/${application.id}`,
     date: new Date().toLocaleDateString("en-IN", {
       day: "numeric",
       month: "long",

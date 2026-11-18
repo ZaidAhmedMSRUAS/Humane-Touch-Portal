@@ -3,9 +3,12 @@ export function getCurrentAcademicYear(date = new Date()): string {
   const configured = process.env.CURRENT_ACADEMIC_YEAR?.trim();
   if (configured && /^20\d{2}-20\d{2}$/.test(configured)) return configured;
 
-  // The scholarship cycle starts in April. This keeps new submissions in the
-  // same cycle across the calendar year boundary.
-  const startYear = date.getMonth() >= 3 ? date.getFullYear() : date.getFullYear() - 1;
+  // The scholarship cycle starts in April. Keep the portal on the 2027-2028
+  // cycle until the calendar-based cycle advances beyond it.
+  const startYear = Math.max(
+    2027,
+    date.getMonth() >= 3 ? date.getFullYear() : date.getFullYear() - 1
+  );
   return `${startYear}-${startYear + 1}`;
 }
 

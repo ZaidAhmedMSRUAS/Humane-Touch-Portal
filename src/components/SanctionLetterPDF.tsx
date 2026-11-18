@@ -1,5 +1,6 @@
 'use client';
 import React, { useState } from 'react';
+import { academicYearForReference } from '@/lib/academicYear';
 
 interface LetterProps {
   application: any;
@@ -15,7 +16,8 @@ export default function SanctionLetterPDF({ application, onClose }: LetterProps)
     year: 'numeric',
   });
 
-  const refNumber = application.referenceNumber || `HT/26-27/${application.id ? application.id.slice(0, 4).toUpperCase() : '001'}`;
+  const academicYear = academicYearForReference(application.academicYear || '2027-2028').replace('-', '–');
+  const refNumber = application.referenceNumber || `HT/${academicYear.replace('–', '-')}/${application.id ? application.id.slice(0, 4).toUpperCase() : '001'}`;
   const studentName = application.student?.fullName || application.fullName || 'Scholarship Recipient';
   const collegeName = application.collegeName || application.college || 'Institution';
   const courseName = application.courseName || application.course || 'Degree Program';
@@ -202,7 +204,7 @@ export default function SanctionLetterPDF({ application, onClose }: LetterProps)
                   </div>
 
                   <p className="text-xs">
-                    This grant has been sanctioned following in-person document scrutiny and a personal interview conducted by the Trustees. The funds are to be adjusted exclusively toward the academic tuition fees of <strong>{studentName}</strong> for the academic year 2026–27.
+                    This grant has been sanctioned following in-person document scrutiny and a personal interview conducted by the Trustees. The funds are to be adjusted exclusively toward the academic tuition fees of <strong>{studentName}</strong> for the academic year {academicYear}.
                   </p>
 
                   <p className="text-xs">

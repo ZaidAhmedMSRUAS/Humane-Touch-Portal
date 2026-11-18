@@ -2,6 +2,7 @@ import React from 'react';
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import PrintButton from '@/components/documents/PrintButton';
+import { academicYearForReference } from '@/lib/academicYear';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -29,6 +30,7 @@ export default async function AwardLetterPage({ params }: Props) {
   });
 
   const amount = application.sanctionedAmount || application.annualTuitionFee || 0;
+  const academicYear = academicYearForReference(application.academicYear || '2027-2028').replace('-', ' – ');
 
   return (
     <div className="min-h-screen bg-slate-100 py-10 print:bg-white print:py-0 flex flex-col items-center">
@@ -36,7 +38,7 @@ export default async function AwardLetterPage({ params }: Props) {
       {/* Top Action Bar */}
       <div className="w-full max-w-3xl flex justify-between items-center mb-6 px-4 print:hidden">
         <span className="text-xs font-bold text-slate-600 font-mono">
-          Ref ID: {application.referenceNumber || 'HT/SANCTION/2026'}
+          Ref ID: {application.referenceNumber || `HT/${academicYear.replace(' – ', '-')}/SANCTION`}
         </span>
         <PrintButton />
       </div>
@@ -67,7 +69,7 @@ export default async function AwardLetterPage({ params }: Props) {
         {/* Date and Reference */}
         <div className="flex justify-between items-center mb-6 text-xs font-semibold">
           <div>
-            <strong>Sanction Ref:</strong> <span className="font-mono text-amber-800">{application.referenceNumber || 'HT/2026/DISBURSAL'}</span>
+            <strong>Sanction Ref:</strong> <span className="font-mono text-amber-800">{application.referenceNumber || `HT/${academicYear.replace(' – ', '-')}/DISBURSAL`}</span>
           </div>
           <div>
             <strong>Date:</strong> {issueDate}
@@ -120,7 +122,7 @@ export default async function AwardLetterPage({ params }: Props) {
                 </tr>
                 <tr>
                   <td className="py-2.5 px-4 font-bold">Academic Cycle</td>
-                  <td className="py-2.5 px-4 font-semibold">2026 – 2027</td>
+                  <td className="py-2.5 px-4 font-semibold">{academicYear}</td>
                 </tr>
               </tbody>
             </table>

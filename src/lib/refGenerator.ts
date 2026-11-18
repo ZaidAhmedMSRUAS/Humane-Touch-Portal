@@ -2,11 +2,11 @@ import { prisma } from '@/lib/prisma';
 
 /**
  * Generates unique course-segregated reference numbers:
- * Format: HT/26-27/{Course}/{0001}
+ * Format: HT/27-28/{Course}/{0001}
  */
 export async function generateApplicationRefNumber(
   rawCourseName?: string | null,
-  academicCycle: string = '26-27'
+  academicCycle: string = '27-28'
 ): Promise<string> {
   // 1. Sanitize Course Name (e.g. "B.Tech Computer Science" -> "B.Tech", "BCA" -> "BCA")
   let courseCode = (rawCourseName || 'GEN').trim();
