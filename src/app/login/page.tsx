@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -210,13 +211,12 @@ export default function LoginPage() {
                   <label className="block text-xs font-bold text-slate-700 tracking-wider">
                     PASSWORD
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => alert('Contact portal administrator to reset password.')}
+                  <Link
+                    href="/forgot-password"
                     className="text-xs font-bold text-amber-600 hover:text-amber-700 hover:underline cursor-pointer"
                   >
                     Forgot Password?
-                  </button>
+                  </Link>
                 </div>
                 <div className="relative flex items-center bg-[#eef4ff] border border-blue-200/60 rounded-2xl px-4 py-3 focus-within:ring-2 focus-within:ring-amber-500 focus-within:bg-white transition">
                   <input
