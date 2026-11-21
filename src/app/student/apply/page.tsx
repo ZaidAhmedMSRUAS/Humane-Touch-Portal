@@ -237,11 +237,14 @@ export default function ApplyPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
+                <label htmlFor="applicationType" className="block font-bold text-slate-700 mb-1">
                   Application Type <span className="text-rose-500 font-black">*</span>
                 </label>
                 <select
+                  id="applicationType"
+                  name="applicationType"
                   required
+                  aria-label="Application Type: Fresh or Renewal"
                   value={formData.applicationType}
                   onChange={(e) => {
                     const applicationType = e.target.value;
