@@ -14,6 +14,7 @@ export default function AdminDashboardPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAcademicYear, setSelectedAcademicYear] = useState('');
+  const [selectedApplicationType, setSelectedApplicationType] = useState('');
   const [applicationSearch, setApplicationSearch] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
 
@@ -58,17 +59,19 @@ export default function AdminDashboardPage() {
   const academicYears = [...new Set(applications.map((app) => app.academicYear).filter(Boolean))].sort().reverse();
   const visibleApplications = applications.filter((app) => {
     const matchesYear = !selectedAcademicYear || (selectedAcademicYear === '__unassigned__' ? !app.academicYear : app.academicYear === selectedAcademicYear);
+    const matchesType = !selectedApplicationType || (selectedApplicationType === '__unassigned__' ? !app.applicationType : app.applicationType === selectedApplicationType);
     const search = applicationSearch.trim().toLowerCase();
     const matchesSearch = !search || [app.referenceNumber, app.student?.fullName, app.student?.phone, app.courseName, app.collegeName]
       .some((value) => String(value || '').toLowerCase().includes(search));
     const matchesStatus = !selectedStatus || app.status === selectedStatus;
-    return matchesYear && matchesSearch && matchesStatus;
+    return matchesYear && matchesType && matchesSearch && matchesStatus;
   });
 
   const downloadApplicationsCsv = () => {
     const columns: { label: string; value: (app: any) => unknown }[] = [
       { label: 'Reference ID', value: (app) => app.referenceNumber },
       { label: 'Academic Year', value: (app) => app.academicYear },
+      { label: 'Application Type', value: (app) => app.applicationType },
       { label: 'Student Name', value: (app) => app.student?.fullName || app.studentName },
       { label: 'Phone', value: (app) => app.student?.phone || app.studentPhone },
       { label: 'Email', value: (app) => app.student?.email },
@@ -281,7 +284,7 @@ export default function AdminDashboardPage() {
               <h3 className="text-base font-black text-slate-900">Scholarship Applications, Editing & Disbursals</h3>
               <p className="text-xs text-slate-500 mt-1">Showing {visibleApplications.length} of {applications.length} applications</p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
               <button
                 type="button"
                 onClick={downloadApplicationsCsv}
@@ -295,6 +298,12 @@ export default function AdminDashboardPage() {
                 <option value="">All academic years</option>
                 {academicYears.map((year) => <option key={year} value={year}>{year}</option>)}
                 {applications.some((app) => !app.academicYear) && <option value="__unassigned__">Year not assigned</option>}
+              </select>
+              <select aria-label="Filter by application type" value={selectedApplicationType} onChange={(e) => setSelectedApplicationType(e.target.value)} className="p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold">
+                <option value="">All application types</option>
+                <option value="FRESH">Fresh</option>
+                <option value="RENEWAL">Renewal</option>
+                {applications.some((app) => !app.applicationType) && <option value="__unassigned__">Type not recorded</option>}
               </select>
               <select aria-label="Filter by application status" value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold">
                 <option value="">All statuses</option>
@@ -314,6 +323,7 @@ export default function AdminDashboardPage() {
                   <tr>
                     <th className="py-3 px-3">Ref ID</th>
                     <th className="py-3 px-3">Year</th>
+                    <th className="py-3 px-3">Type</th>
                     <th className="py-3 px-3">Student</th>
                     <th className="py-3 px-3">Course & College</th>
                     <th className="py-3 px-3">Volunteer</th>
@@ -330,6 +340,7 @@ export default function AdminDashboardPage() {
                       <tr key={app.id} className="hover:bg-slate-50/60 transition">
                         <td className="py-3 px-3 font-mono font-bold text-amber-800">{app.referenceNumber || 'N/A'}</td>
                         <td className="py-3 px-3 font-semibold text-slate-600">{app.academicYear || 'Unassigned'}</td>
+                        <td className="py-3 px-3 font-semibold text-slate-600">{app.applicationType || 'Not recorded'}</td>
                         <td className="py-3 px-3">
                           <div className="font-bold text-slate-900">{app.student?.fullName}</div>
                           <div className="text-[11px] text-slate-400">{app.student?.phone}</div>

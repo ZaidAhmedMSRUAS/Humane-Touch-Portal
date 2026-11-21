@@ -23,6 +23,11 @@ enum ApplicationStatus {
   REJECTED
 }
 
+enum ApplicationType {
+  FRESH
+  RENEWAL
+}
+
 enum OtpType {
   PHONE_VERIFY
   EMAIL_VERIFY
@@ -65,6 +70,7 @@ model Application {
   id                         String                @id @default(cuid())
   referenceNumber            String?               @unique
   academicYear               String?
+  applicationType            ApplicationType?
   studentId                  String
   student                    User                  @relation("StudentApplications", fields: [studentId], references: [id])
   

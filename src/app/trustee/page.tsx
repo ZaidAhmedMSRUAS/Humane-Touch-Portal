@@ -271,6 +271,7 @@ export default function TrusteeDashboardPage() {
                 <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold">
                   <tr>
                     <th className="py-3 px-3">Academic Year</th>
+                    <th className="py-3 px-3">Type</th>
                     <th className="py-3 px-3">Ref ID</th>
                     <th className="py-3 px-3">Scholar</th>
                     <th className="py-3 px-3">Course & College</th>
@@ -283,6 +284,7 @@ export default function TrusteeDashboardPage() {
                   {visibleAllApplications.map((app) => (
                     <tr key={app.id} className="hover:bg-slate-50/60">
                       <td className="py-3 px-3 font-semibold text-slate-600">{app.academicYear || 'Unassigned'}</td>
+                      <td className="py-3 px-3 font-semibold text-slate-600">{app.applicationType || 'Not recorded'}</td>
                       <td className="py-3 px-3 font-mono font-bold text-amber-800">{app.referenceNumber || 'N/A'}</td>
                       <td className="py-3 px-3"><div className="font-bold text-slate-900">{app.student?.fullName || app.studentName}</div><div className="text-[11px] text-slate-400">{app.student?.phone || app.studentPhone}</div></td>
                       <td className="py-3 px-3"><div className="font-semibold text-slate-800">{app.courseName}</div><div className="text-[11px] text-slate-400">{app.collegeName}</div></td>

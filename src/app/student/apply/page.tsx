@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface FormData {
+  applicationType: '' | 'FRESH' | 'RENEWAL';
   collegeName: string;
   courseName: string;
   currentYearOfStudy: string;
@@ -26,6 +27,7 @@ interface FormData {
 export default function ApplyPage() {
   const router = useRouter();
   const [formData, setFormData] = useState<FormData>({
+    applicationType: '',
     collegeName: '',
     courseName: '',
     currentYearOfStudy: '',
@@ -121,6 +123,7 @@ export default function ApplyPage() {
     }
 
     // Required Text Fields
+    if (!formData.applicationType) errors.push('Application Type is required (*)');
     if (!formData.collegeName.trim()) errors.push('College Name is required (*)');
     if (!formData.courseName.trim()) errors.push('Degree / Course Name is required (*)');
     if (!formData.currentYearOfStudy.trim()) errors.push('Current Year of Study is required (*)');
@@ -233,6 +236,26 @@ export default function ApplyPage() {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Application Type <span className="text-rose-500 font-black">*</span>
+                </label>
+                <select
+                  required
+                  value={formData.applicationType}
+                  onChange={(e) => {
+                    const applicationType = e.target.value;
+                    if (applicationType === '' || applicationType === 'FRESH' || applicationType === 'RENEWAL') {
+                      setFormData({ ...formData, applicationType });
+                    }
+                  }}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-amber-500 font-semibold"
+                >
+                  <option value="">Select Application Type</option>
+                  <option value="FRESH">Fresh</option>
+                  <option value="RENEWAL">Renewal</option>
+                </select>
+              </div>
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
                   College / University Name <span className="text-rose-500 font-black">*</span>

@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { generateApplicationRefNumber } from '@/lib/refGenerator';
 import { sanitizeAmount, sanitizeMarks, sanitizeText } from '@/lib/validation';
-import { ApplicationStatus } from '@prisma/client';
+import { ApplicationStatus, ApplicationType } from '@prisma/client';
 import { academicYearForReference, getCurrentAcademicYear } from '@/lib/academicYear';
 
 export async function POST(req: Request) {
@@ -16,6 +16,9 @@ export async function POST(req: Request) {
 
     const userId = (session.user as any).id;
     const body = await req.json();
+    if (body.applicationType !== ApplicationType.FRESH && body.applicationType !== ApplicationType.RENEWAL) {
+      return NextResponse.json({ error: 'Select Fresh or Renewal as the application type.' }, { status: 400 });
+    }
     const academicYear = getCurrentAcademicYear();
     const existingApplication = await prisma.application.findFirst({ where: { studentId: userId, academicYear } });
     if (existingApplication) return NextResponse.json({ error: `You already have an application for ${academicYear}. Track it from your dashboard.`, applicationId: existingApplication.id }, { status: 409 });
@@ -51,6 +54,7 @@ export async function POST(req: Request) {
         student: { connect: { id: userId } },
         referenceNumber: refNumber,
         academicYear,
+        applicationType: body.applicationType,
         collegeName: sanitizeText(body.collegeName),
         courseName: sanitizeText(body.courseName),
         currentYearOfStudy: sanitizeText(body.currentYearOfStudy),
